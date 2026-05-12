@@ -1,4 +1,6 @@
 import type { WidgetDefinition } from './types'
+
+export type OrderedWidget = WidgetDefinition
 import { PersonalCalendar } from './PersonalCalendar'
 import { WorkCalendar } from './WorkCalendar'
 import { Notes } from './Notes'
