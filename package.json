@@ -4,19 +4,27 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n client,server -c cyan,yellow \"vite\" \"tsx watch server/index.ts\"",
+    "dev:client": "vite",
+    "dev:server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hono/node-server": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.4.2",
+    "hono": "^4.12.18",
     "lucide-react": "^1.14.0",
+    "node-ical": "^0.26.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.0",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
