@@ -3,12 +3,14 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import calendar from './routes/calendar'
+import tracking from './routes/tracking'
 
 const app = new Hono()
 
 app.use('*', cors({ origin: 'http://localhost:5173' }))
 
 app.route('/api/calendar', calendar)
+app.route('/api/tracking', tracking)
 
 app.get('/health', (c) => c.json({ ok: true }))
 
