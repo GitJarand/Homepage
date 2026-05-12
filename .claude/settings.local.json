@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(gh --version)",
+      "Bash(git --version)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(gh --version)",
+      "Read(//mnt/c/Users/store/Documents/Code/**)",
+      "Bash(npm create *)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; Set-Location \"C:\\\\Users\\\\store\\\\Documents\\\\Code\\\\Homepage\"; & \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" create vite@latest . -- --template react-ts 2>&1)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\GitHub CLI\\\\\" -ErrorAction SilentlyContinue; Get-ChildItem \"${env:LOCALAPPDATA}\\\\Programs\\\\gh\\\\\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Program Files \\(x86\\)\\\\GitHub CLI\\\\\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

@@ -1,15 +1,4 @@
-import { Card } from '@/components/ui/card'
-
-const CARDS = [
-  { id: 1, title: 'Card 1' },
-  { id: 2, title: 'Card 2' },
-  { id: 3, title: 'Card 3' },
-  { id: 4, title: 'Card 4' },
-  { id: 5, title: 'Card 5' },
-  { id: 6, title: 'Card 6' },
-  { id: 7, title: 'Card 7' },
-  { id: 8, title: 'Card 8' },
-]
+import { widgets } from '@/widgets/registry'
 
 export default function Dashboard() {
   return (
@@ -18,10 +7,8 @@ export default function Dashboard() {
         Homepage
       </h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {CARDS.map((card) => (
-          <Card key={card.id} title={card.title} className="min-h-40">
-            <p className="text-sm text-[var(--color-muted-foreground)]">Empty</p>
-          </Card>
+        {widgets.map(({ id, component: Widget }) => (
+          <Widget key={id} />
         ))}
       </div>
     </div>
