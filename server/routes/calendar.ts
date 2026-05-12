@@ -3,39 +3,77 @@ import ical from 'node-ical'
 
 const calendar = new Hono()
 
-calendar.get('/personal', async (c) => {
-  const url = process.env.ICAL_PERSONAL_URL
+interface CalendarSource {
+  url: string
+  name: string
+}
 
-  if (!url) {
-    return c.json({ error: 'ICAL_PERSONAL_URL is not set' }, 503)
+interface CalendarEvent {
+  id: string
+  title: string
+  start: Date
+  end: Date
+  location: string | null
+  calendar: string
+}
+
+function getCalendarSources(): CalendarSource[] {
+  const sources: CalendarSource[] = []
+  let i = 1
+
+  while (process.env[`ICAL_CALENDAR_${i}_URL`]) {
+    sources.push({
+      url: process.env[`ICAL_CALENDAR_${i}_URL`]!,
+      name: process.env[`ICAL_CALENDAR_${i}_NAME`] ?? `Calendar ${i}`,
+    })
+    i++
+  }
+
+  return sources
+}
+
+async function fetchCalendar(source: CalendarSource): Promise<CalendarEvent[]> {
+  const events = await ical.async.fromURL(source.url)
+  const now = new Date()
+
+  return Object.values(events)
+    .filter((e): e is ical.VEvent => e.type === 'VEVENT' && new Date(e.start) >= now)
+    .map((e) => ({
+      id: `${source.name}-${e.uid}`,
+      title: e.summary ?? '(No title)',
+      start: new Date(e.start),
+      end: new Date(e.end),
+      location: e.location ?? null,
+      calendar: source.name,
+    }))
+}
+
+calendar.get('/personal', async (c) => {
+  const sources = getCalendarSources()
+
+  if (sources.length === 0) {
+    return c.json({ error: 'No calendars configured. Add ICAL_CALENDAR_1_URL to .env' }, 503)
   }
 
   try {
-    const events = await ical.async.fromURL(url)
+    const results = await Promise.allSettled(sources.map(fetchCalendar))
 
-    const now = new Date()
-    const upcoming = Object.values(events)
-      .filter((e) => e.type === 'VEVENT' && e.start >= now)
-      .sort((a, b) => {
-        const aEvent = a as ical.VEvent
-        const bEvent = b as ical.VEvent
-        return new Date(aEvent.start).getTime() - new Date(bEvent.start).getTime()
-      })
-      .slice(0, 10)
-      .map((e) => {
-        const event = e as ical.VEvent
-        return {
-          id: event.uid,
-          title: event.summary,
-          start: event.start,
-          end: event.end,
-          location: event.location ?? null,
-        }
-      })
+    const events: CalendarEvent[] = []
+    const errors: string[] = []
 
-    return c.json(upcoming)
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        events.push(...result.value)
+      } else {
+        errors.push(`Failed to fetch "${sources[i].name}": ${result.reason}`)
+      }
+    })
+
+    events.sort((a, b) => a.start.getTime() - b.start.getTime())
+
+    return c.json({ events: events.slice(0, 20), errors })
   } catch {
-    return c.json({ error: 'Failed to fetch calendar' }, 502)
+    return c.json({ error: 'Unexpected error fetching calendars' }, 502)
   }
 })
 
