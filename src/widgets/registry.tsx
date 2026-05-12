@@ -11,6 +11,7 @@ export const widgets: WidgetDefinition[] = [
     title: 'Personal Calendar',
     description: 'Upcoming personal events',
     component: PersonalCalendar,
+    colSpan: 2,
   },
   {
     id: 'work-calendar',

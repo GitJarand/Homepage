@@ -11,4 +11,5 @@ export interface WidgetDefinition {
   title: string
   description: string
   component: React.ComponentType
+  colSpan?: 1 | 2 | 3 | 4
 }

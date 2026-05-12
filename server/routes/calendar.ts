@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import ical from 'node-ical'
+import IcalExpander from 'ical-expander'
 
 const calendar = new Hono()
 
@@ -11,8 +11,8 @@ interface CalendarSource {
 interface CalendarEvent {
   id: string
   title: string
-  start: Date
-  end: Date
+  start: string
+  end: string
   location: string | null
   calendar: string
 }
@@ -20,7 +20,6 @@ interface CalendarEvent {
 function getCalendarSources(): CalendarSource[] {
   const sources: CalendarSource[] = []
   let i = 1
-
   while (process.env[`ICAL_CALENDAR_${i}_URL`]) {
     sources.push({
       url: process.env[`ICAL_CALENDAR_${i}_URL`]!,
@@ -28,53 +27,63 @@ function getCalendarSources(): CalendarSource[] {
     })
     i++
   }
-
   return sources
 }
 
-async function fetchCalendar(source: CalendarSource): Promise<CalendarEvent[]> {
-  const events = await ical.async.fromURL(source.url)
-  const now = new Date()
+async function fetchCalendar(source: CalendarSource, start: Date, end: Date): Promise<CalendarEvent[]> {
+  const res = await fetch(source.url)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const ics = await res.text()
 
-  return Object.values(events)
-    .filter((e): e is ical.VEvent => e.type === 'VEVENT' && new Date(e.start) >= now)
-    .map((e) => ({
-      id: `${source.name}-${e.uid}`,
+  const expander = new IcalExpander({ ics, maxIterations: 500 })
+  const { events, occurrences } = expander.between(start, end)
+
+  const mapped: CalendarEvent[] = [
+    ...events.map((e) => ({
+      id: e.uid,
       title: e.summary ?? '(No title)',
-      start: new Date(e.start),
-      end: new Date(e.end),
+      start: e.startDate.toJSDate().toISOString(),
+      end: e.endDate.toJSDate().toISOString(),
       location: e.location ?? null,
       calendar: source.name,
-    }))
+    })),
+    ...occurrences.map((o) => ({
+      id: `${o.item.uid}-${o.startDate.toUnixTime()}`,
+      title: o.item.summary ?? '(No title)',
+      start: o.startDate.toJSDate().toISOString(),
+      end: o.endDate.toJSDate().toISOString(),
+      location: o.item.location ?? null,
+      calendar: source.name,
+    })),
+  ]
+
+  return mapped.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
 }
 
 calendar.get('/personal', async (c) => {
   const sources = getCalendarSources()
-
   if (sources.length === 0) {
     return c.json({ error: 'No calendars configured. Add ICAL_CALENDAR_1_URL to .env' }, 503)
   }
 
-  try {
-    const results = await Promise.allSettled(sources.map(fetchCalendar))
+  const startParam = c.req.query('start')
+  const endParam = c.req.query('end')
+  const start = startParam ? new Date(startParam) : (() => { const d = new Date(); d.setHours(0,0,0,0); return d })()
+  const end = endParam ? new Date(endParam) : (() => { const d = new Date(); d.setHours(23,59,59,999); return d })()
 
-    const events: CalendarEvent[] = []
-    const errors: string[] = []
+  const results = await Promise.allSettled(sources.map((s) => fetchCalendar(s, start, end)))
 
-    results.forEach((result, i) => {
-      if (result.status === 'fulfilled') {
-        events.push(...result.value)
-      } else {
-        errors.push(`Failed to fetch "${sources[i].name}": ${result.reason}`)
-      }
-    })
+  const events: CalendarEvent[] = []
+  const errors: string[] = []
 
-    events.sort((a, b) => a.start.getTime() - b.start.getTime())
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') events.push(...r.value)
+    else errors.push(`"${sources[i].name}": ${r.reason}`)
+  })
 
-    return c.json({ events: events.slice(0, 20), errors })
-  } catch {
-    return c.json({ error: 'Unexpected error fetching calendars' }, 502)
-  }
+  events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+
+  return c.json({ events, errors })
 })
 
 export default calendar
