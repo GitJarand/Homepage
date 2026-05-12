@@ -3,6 +3,7 @@ import { PersonalCalendar } from './PersonalCalendar'
 import { WorkCalendar } from './WorkCalendar'
 import { Notes } from './Notes'
 import { Visual } from './Visual'
+import { Packages } from './Packages'
 import { Placeholder } from './Placeholder'
 
 export const widgets: WidgetDefinition[] = [
@@ -32,10 +33,10 @@ export const widgets: WidgetDefinition[] = [
     component: Visual,
   },
   {
-    id: 'placeholder-5',
-    title: 'Slot 5',
-    description: 'Available',
-    component: () => <Placeholder title="Slot 5" />,
+    id: 'packages',
+    title: 'Packages',
+    description: 'Package tracking',
+    component: Packages,
   },
   {
     id: 'placeholder-6',
