@@ -65,19 +65,21 @@ function SortableCard({ widget }: { widget: OrderedWidget }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
+  const { resolvedTheme } = useTheme()
+  const bgColor = resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color
 
   const Widget = widget.component
 
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{ transform: CSS.Transform.toString(transform), transition, backgroundColor: bgColor }}
       className={cn(
         widget.colSpan === 2 && 'sm:col-span-2',
         widget.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
         widget.colSpan === 4 && 'sm:col-span-2 lg:col-span-4',
         isDragging ? 'opacity-40' : 'opacity-100',
-        'transition-opacity',
+        'transition-opacity outline-none',
       )}
       {...attributes}
       {...listeners}
@@ -111,28 +113,33 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
-          Homepage
-        </h1>
-        <button
-          onClick={toggle}
-          className="rounded-full p-2 text-[var(--color-foreground)] hover:bg-[var(--color-muted)] transition-colors"
-          aria-label="Toggle dark mode"
-        >
-          {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-        </button>
-      </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {ordered.map((widget) => (
-              <SortableCard key={widget.id} widget={widget} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+    <div className="min-h-screen bg-[var(--color-background)]">
+      {/* Nav bar */}
+      <header className="sticky top-0 z-10 bg-[var(--color-background)]/80 backdrop-blur-xl">
+        <div className="relative flex items-center justify-center px-8 py-5">
+          <span className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">This is today</span>
+          <button
+            onClick={toggle}
+            className="absolute right-8 rounded-full p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </div>
+      </header>
+
+      {/* Grid */}
+      <main className="pt-10">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ordered.map((widget) => (
+                <SortableCard key={widget.id} widget={widget} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </main>
     </div>
   )
 }

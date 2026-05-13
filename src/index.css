@@ -1,41 +1,55 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --radius: 0.75rem;
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #1d1d1f;
+  --color-secondary: #6e6e73;
+  --color-card: #e8edf5;
+  --color-card-foreground: #1d1d1f;
+  --color-border: #c8cdd8;
+  --color-muted: #d8dde8;
+  --color-muted-foreground: #6e6e73;
+  --color-accent: #0071e3;
+  --radius: 0px;
+  --card-shadow: none;
+  --card-border: transparent;
 }
 
 :root.dark {
-  --color-background: hsl(222.2 84% 4.9%);
-  --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222.2 84% 4.9%);
-  --color-card-foreground: hsl(210 40% 98%);
-  --color-border: hsl(217.2 32.6% 17.5%);
-  --color-muted: hsl(217.2 32.6% 17.5%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
+  --color-background: #000000;
+  --color-foreground: #f5f5f7;
+  --color-secondary: #6e6e73;
+  --color-card: #1c1c1e;
+  --color-card-foreground: #f5f5f7;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-muted: #2c2c2e;
+  --color-muted-foreground: #6e6e73;
+  --color-accent: #0a84ff;
+  --card-shadow: none;
+  --card-border: rgba(255, 255, 255, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --color-background: hsl(222.2 84% 4.9%);
-    --color-foreground: hsl(210 40% 98%);
-    --color-card: hsl(222.2 84% 4.9%);
-    --color-card-foreground: hsl(210 40% 98%);
-    --color-border: hsl(217.2 32.6% 17.5%);
-    --color-muted: hsl(217.2 32.6% 17.5%);
-    --color-muted-foreground: hsl(215 20.2% 65.1%);
+    --color-background: #000000;
+    --color-foreground: #f5f5f7;
+    --color-secondary: #6e6e73;
+    --color-card: #1c1c1e;
+    --color-card-foreground: #f5f5f7;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-muted: #2c2c2e;
+    --color-muted-foreground: #6e6e73;
+    --color-accent: #0a84ff;
+    --card-shadow: none;
+    --card-border: rgba(255, 255, 255, 0.08);
   }
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

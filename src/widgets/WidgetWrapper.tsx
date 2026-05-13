@@ -13,11 +13,11 @@ export function WidgetWrapper({ title, status, error, children, className }: Wid
   return (
     <div
       className={cn(
-        'flex flex-col rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm min-h-40',
+        'flex flex-col bg-transparent p-8 min-h-72',
         className
       )}
     >
-      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--color-muted-foreground)]">
+      <h3 className="mb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         {title}
       </h3>
 
