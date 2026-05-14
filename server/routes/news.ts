@@ -63,22 +63,25 @@ news.get('/feed', async (c) => {
   const feedUrl = feeds[source]
   if (!feedUrl) return c.json({ error: 'Unknown source' }, 400)
 
-  try {
-    const res = await fetch(feedUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/rss+xml, application/xml, text/xml',
-        'Accept-Encoding': 'identity',
-      },
-    })
-    if (!res.ok) return c.json({ error: `Feed returned ${res.status}` }, 502)
-    const xml = await res.text()
-    const items = parseItems(xml, limit)
-    return c.json({ source, items })
-  } catch (err) {
-    const cause = (err as { cause?: { message?: string } })?.cause
-    const msg = cause?.message ?? (err instanceof Error ? err.message : 'Unknown error')
-    return c.json({ error: msg }, 502)
+  const headers = {
+    'User-Agent': 'Mozilla/5.0',
+    'Accept': 'application/rss+xml, application/xml, text/xml',
+    'Accept-Encoding': 'identity',
+  }
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt))
+      const res = await fetch(feedUrl, { headers })
+      if (!res.ok) return c.json({ error: `Feed returned ${res.status}` }, 502)
+      const xml = await res.text()
+      return c.json({ source, items: parseItems(xml, limit) })
+    } catch (err) {
+      if (attempt < 2) continue
+      const cause = (err as { cause?: { message?: string } })?.cause
+      const msg = cause?.message ?? (err instanceof Error ? err.message : 'Unknown error')
+      return c.json({ error: msg }, 502)
+    }
   }
 })
 

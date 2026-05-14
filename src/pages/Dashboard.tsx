@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -41,6 +41,10 @@ function MoonIcon() {
 
 const ORDER_KEY = 'homepage:widget-order'
 const SIZES_KEY = 'homepage:widget-sizes'
+const COLS_KEY  = 'homepage:col-widths'
+
+const NUM_COLS = 4
+const GAP = 16 // gap-4
 
 type ColSpan = 1 | 2 | 3 | 4
 type RowSpan = 1 | 2 | 3
@@ -49,7 +53,6 @@ interface WidgetSize { colSpan: ColSpan; rowSpan: RowSpan }
 function loadSizes(): Record<string, WidgetSize> {
   try { return JSON.parse(localStorage.getItem(SIZES_KEY) ?? '{}') } catch { return {} }
 }
-
 function saveSizes(sizes: Record<string, WidgetSize>) {
   localStorage.setItem(SIZES_KEY, JSON.stringify(sizes))
 }
@@ -67,14 +70,79 @@ function loadOrder(defaults: OrderedWidget[]): OrderedWidget[] {
     return defaults
   }
 }
-
-function saveOrder(widgets: OrderedWidget[]) {
-  localStorage.setItem(ORDER_KEY, JSON.stringify(widgets.map((w) => w.id)))
+function saveOrder(ws: OrderedWidget[]) {
+  localStorage.setItem(ORDER_KEY, JSON.stringify(ws.map((w) => w.id)))
 }
 
-// ─── Resize handle ────────────────────────────────────────────────────────────
+function loadColWidths(): number[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLS_KEY) ?? 'null') as number[] | null
+    if (Array.isArray(saved) && saved.length === NUM_COLS) return saved
+  } catch {}
+  return Array(NUM_COLS).fill(1)
+}
+function saveColWidths(widths: number[]) {
+  localStorage.setItem(COLS_KEY, JSON.stringify(widths))
+}
 
-function ResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number) => void }) {
+// ─── Column resize handle ────────────────────────────────────────────────────
+
+function ColResizeHandle({
+  index,
+  leftPx,
+  colWidths,
+  gridWidth,
+  onChange,
+}: {
+  index: number
+  leftPx: number
+  colWidths: number[]
+  gridWidth: number
+  onChange: (widths: number[]) => void
+}) {
+  const startRef = useRef<{ x: number; widths: number[] } | null>(null)
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    startRef.current = { x: e.clientX, widths: [...colWidths] }
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!startRef.current) return
+    const { x, widths } = startRef.current
+    const dx = e.clientX - x
+    const totalFr = widths.reduce((s, w) => s + w, 0)
+    const availW = gridWidth - GAP * (NUM_COLS - 1)
+    const dFr = (dx / availW) * totalFr
+    const next = [...widths]
+    next[index] = Math.max(0.15, widths[index] + dFr)
+    next[index + 1] = Math.max(0.15, widths[index + 1] - dFr)
+    onChange(next)
+  }
+
+  function onPointerUp() {
+    if (startRef.current) saveColWidths(colWidths)
+    startRef.current = null
+  }
+
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      className="group/col absolute top-0 bottom-0 z-20 flex cursor-col-resize items-center justify-center"
+      style={{ left: leftPx - 8, width: 16, touchAction: 'none' }}
+    >
+      <div className="h-12 w-px rounded-full bg-[var(--color-border)] opacity-0 transition-opacity group-hover/col:opacity-100" />
+    </div>
+  )
+}
+
+// ─── Card resize handle ───────────────────────────────────────────────────────
+
+function CardResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number) => void }) {
   const startRef = useRef<{
     x: number; y: number; unitW: number; unitH: number
     lastDCol: number; lastDRow: number
@@ -92,8 +160,8 @@ function ResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number) => 
     const gridStyle = getComputedStyle(grid)
     const gap = parseFloat(gridStyle.columnGap || '0')
     const cols = gridStyle.gridTemplateColumns.split(' ').length
-    const gridWidth = grid.getBoundingClientRect().width
-    const unitW = (gridWidth + gap) / cols
+    const gw = grid.getBoundingClientRect().width
+    const unitW = (gw + gap) / cols
 
     const rowsStr = gridStyle.gridTemplateRows
     const rowH = rowsStr === 'none' ? card.getBoundingClientRect().height
@@ -115,9 +183,7 @@ function ResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number) => 
     }
   }
 
-  function onPointerUp() {
-    startRef.current = null
-  }
+  function onPointerUp() { startRef.current = null }
 
   return (
     <div
@@ -170,11 +236,11 @@ function SortableCard({
         position: 'relative',
       }}
       className={cn(
-        colSpan === 2 && 'sm:col-span-2',
-        colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
-        colSpan === 4 && 'sm:col-span-2 lg:col-span-4',
-        rowSpan === 2 && 'sm:row-span-2',
-        rowSpan === 3 && 'sm:row-span-3',
+        colSpan === 2 && 'col-span-2',
+        colSpan === 3 && 'col-span-3',
+        colSpan === 4 && 'col-span-4',
+        rowSpan === 2 && 'row-span-2',
+        rowSpan === 3 && 'row-span-3',
         isDragging ? 'opacity-40' : 'opacity-100',
         'group transition-opacity outline-none',
       )}
@@ -182,7 +248,7 @@ function SortableCard({
       {...listeners}
     >
       <Widget />
-      <ResizeHandle onResize={onResize} />
+      <CardResizeHandle onResize={onResize} />
     </div>
   )
 }
@@ -193,6 +259,47 @@ export default function Dashboard() {
   const { resolvedTheme, toggle } = useTheme()
   const [ordered, setOrdered] = useState<OrderedWidget[]>(() => loadOrder(widgets))
   const [sizes, setSizes] = useState<Record<string, WidgetSize>>(loadSizes)
+  const [colWidths, setColWidths] = useState<number[]>(loadColWidths)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const [gridWidth, setGridWidth] = useState(0)
+
+  useEffect(() => {
+    if (!gridRef.current) return
+    const ro = new ResizeObserver(entries => setGridWidth(entries[0].contentRect.width))
+    ro.observe(gridRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  // Pixel position of each column divider (center of gap between col i and i+1)
+  const handlePositions = (() => {
+    if (gridWidth === 0) return []
+    const totalFr = colWidths.reduce((s, w) => s + w, 0)
+    const availW = gridWidth - GAP * (NUM_COLS - 1)
+    const positions: number[] = []
+    let x = 0
+    for (let i = 0; i < NUM_COLS - 1; i++) {
+      x += (colWidths[i] / totalFr) * availW + GAP
+      positions.push(x - GAP / 2)
+    }
+    return positions
+  })()
+
+  const handleColWidthChange = useCallback((widths: number[]) => {
+    setColWidths(widths)
+    saveColWidths(widths)
+  }, [])
+
+  function handleReset() {
+    const defaultWidths = Array(NUM_COLS).fill(1)
+    const defaultOrder = widgets
+    const defaultSizes: Record<string, WidgetSize> = {}
+    setColWidths(defaultWidths)
+    setOrdered(defaultOrder)
+    setSizes(defaultSizes)
+    saveColWidths(defaultWidths)
+    saveOrder(defaultOrder)
+    saveSizes(defaultSizes)
+  }
 
   const handleResize = useCallback((id: string, dCol: number, dRow: number) => {
     setSizes(prev => {
@@ -230,13 +337,22 @@ export default function Dashboard() {
       <header className="sticky top-0 z-10 backdrop-blur-xl" style={{ backgroundColor: 'var(--card-bg)' }}>
         <div className="relative flex items-center justify-center px-8 py-5">
           <span className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">This is today</span>
-          <button
-            onClick={toggle}
-            className="absolute right-8 rounded-full p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-          </button>
+          <div className="absolute right-8 flex items-center gap-2">
+            <button
+              onClick={handleReset}
+              className="rounded-full px-3 py-1 text-xs text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors"
+              title="Reset layout to defaults"
+            >
+              Reset layout
+            </button>
+            <button
+              onClick={toggle}
+              className="rounded-full p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] transition-colors"
+              aria-label="Toggle dark mode"
+            >
+              {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -244,22 +360,43 @@ export default function Dashboard() {
       <main className="px-4 pt-10">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {ordered.map((widget) => {
-                const size = sizes[widget.id]
-                const colSpan = (size?.colSpan ?? widget.colSpan ?? 1) as ColSpan
-                const rowSpan = (size?.rowSpan ?? widget.rowSpan ?? 1) as RowSpan
-                return (
-                  <SortableCard
-                    key={widget.id}
-                    widget={widget}
-                    bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
-                    colSpan={colSpan}
-                    rowSpan={rowSpan}
-                    onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
-                  />
-                )
-              })}
+            <div style={{ position: 'relative' }}>
+              {/* Column resize handles */}
+              {handlePositions.map((leftPx, i) => (
+                <ColResizeHandle
+                  key={i}
+                  index={i}
+                  leftPx={leftPx}
+                  colWidths={colWidths}
+                  gridWidth={gridWidth}
+                  onChange={handleColWidthChange}
+                />
+              ))}
+              {/* Card grid */}
+              <div
+                ref={gridRef}
+                className="grid gap-4 [grid-auto-flow:dense]"
+                style={{
+                  gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
+                  gridAutoRows: 'minmax(220px, auto)',
+                }}
+              >
+                {ordered.map((widget) => {
+                  const size = sizes[widget.id]
+                  const colSpan = (size?.colSpan ?? widget.colSpan ?? 1) as ColSpan
+                  const rowSpan = (size?.rowSpan ?? widget.rowSpan ?? 1) as RowSpan
+                  return (
+                    <SortableCard
+                      key={widget.id}
+                      widget={widget}
+                      bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
+                      colSpan={colSpan}
+                      rowSpan={rowSpan}
+                      onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
+                    />
+                  )
+                })}
+              </div>
             </div>
           </SortableContext>
         </DndContext>
