@@ -8,6 +8,7 @@ import { Visual } from './Visual'
 import { Packages } from './Packages'
 import { YouTube } from './YouTube'
 import { Placeholder } from './Placeholder'
+import { News } from './News'
 
 export const widgets: WidgetDefinition[] = [
   {
@@ -53,6 +54,22 @@ export const widgets: WidgetDefinition[] = [
     colSpan: 2,
     rowSpan: 2,
     color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.16)',
+  },
+  {
+    id: 'news-vg',
+    title: 'VG',
+    description: 'Latest news from VG',
+    component: News,
+    rowSpan: 2,
+    color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.14)',
+  },
+  {
+    id: 'news-nrk',
+    title: 'NRK',
+    description: 'Latest news from NRK',
+    component: () => <News source="nrk" label="NRK" />,
+    rowSpan: 2,
+    color: 'rgba(0, 122, 255, 0.08)',        colorDark: 'rgba(0, 122, 255, 0.14)',
   },
   {
     id: 'placeholder-7',
