@@ -83,6 +83,7 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
         widget.colSpan === 2 && 'sm:col-span-2',
         widget.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
         widget.colSpan === 4 && 'sm:col-span-2 lg:col-span-4',
+        widget.rowSpan === 2 && 'sm:row-span-2',
         isDragging ? 'opacity-40' : 'opacity-100',
         'transition-opacity outline-none',
       )}

@@ -4,9 +4,18 @@ const youtube = new Hono()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+}
+
 function extractFirst(xml: string, tag: string): string | null {
   const m = xml.match(new RegExp(`<${tag}[^>]*>([^<]+)<\/${tag}>`))
-  return m ? m[1].trim() : null
+  return m ? decodeEntities(m[1].trim()) : null
 }
 
 function extractAttr(xml: string, tag: string, attr: string): string | null {

@@ -50,6 +50,8 @@ export const widgets: WidgetDefinition[] = [
     title: 'YouTube',
     description: 'Latest videos from your channels',
     component: YouTube,
+    colSpan: 2,
+    rowSpan: 2,
     color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.16)',
   },
   {
