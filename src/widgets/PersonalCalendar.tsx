@@ -287,7 +287,7 @@ export function PersonalCalendar() {
           >
             ‹
           </button>
-          <span className="w-36 text-center text-sm font-medium text-[var(--color-foreground)]">
+          <span className="w-20 text-center text-sm font-medium text-[var(--color-foreground)]">
             {headerTitle(date, view)}
           </span>
           <button
