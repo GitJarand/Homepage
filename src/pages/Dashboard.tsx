@@ -61,7 +61,7 @@ function saveOrder(widgets: OrderedWidget[]) {
 
 // ─── Sortable card ────────────────────────────────────────────────────────────
 
-function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: string | undefined }) {
+function SortableCard({ widget }: { widget: OrderedWidget }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
@@ -74,7 +74,7 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        backgroundColor: bgColor,
+        backgroundColor: 'var(--card-bg)',
         borderRadius: 'var(--radius)',
         boxShadow: 'var(--card-shadow)',
         border: '1px solid var(--card-border)',
@@ -118,9 +118,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
+    <div className="min-h-screen">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 bg-[var(--color-background)]/90">
+      <header className="sticky top-0 z-10 backdrop-blur-xl" style={{ backgroundColor: 'var(--card-bg)' }}>
         <div className="relative flex items-center justify-center px-8 py-5">
           <span className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">This is today</span>
           <button
@@ -139,11 +139,7 @@ export default function Dashboard() {
           <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ordered.map((widget) => (
-                <SortableCard
-                  key={widget.id}
-                  widget={widget}
-                  bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
-                />
+                <SortableCard key={widget.id} widget={widget} />
               ))}
             </div>
           </SortableContext>

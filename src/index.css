@@ -1,52 +1,61 @@
 @import "tailwindcss";
 
 :root {
-  --color-background: #F7F7F4;
   --color-foreground: #1d1d1f;
   --color-secondary: #6e6e73;
-  --color-card: #ffffff;
-  --color-card-foreground: #1d1d1f;
-  --color-border: #c8cdd8;
-  --color-muted: #e8e8e5;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-muted: rgba(0, 0, 0, 0.06);
   --color-muted-foreground: #6e6e73;
   --color-accent: #0071e3;
   --radius: 16px;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.08);
-  --card-border: rgba(0,0,0,0.06);
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.07), 0 8px 28px rgba(0,0,0,0.11);
+  --card-border: rgba(255, 255, 255, 0.90);
 }
 
 :root.dark {
-  --color-background: #111110;
   --color-foreground: #f5f5f7;
   --color-secondary: #6e6e73;
-  --color-card: #1c1c1e;
-  --color-card-foreground: #f5f5f7;
   --color-border: rgba(255, 255, 255, 0.1);
-  --color-muted: #2c2c2e;
+  --color-muted: rgba(255, 255, 255, 0.07);
   --color-muted-foreground: #6e6e73;
   --color-accent: #0a84ff;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.5);
-  --card-border: rgba(255, 255, 255, 0.07);
+  --card-bg: rgba(255, 255, 255, 0.07);
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 8px 28px rgba(0,0,0,0.55);
+  --card-border: rgba(255, 255, 255, 0.11);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --color-background: #111110;
     --color-foreground: #f5f5f7;
     --color-secondary: #6e6e73;
-    --color-card: #1c1c1e;
-    --color-card-foreground: #f5f5f7;
     --color-border: rgba(255, 255, 255, 0.1);
-    --color-muted: #2c2c2e;
+    --color-muted: rgba(255, 255, 255, 0.07);
     --color-muted-foreground: #6e6e73;
     --color-accent: #0a84ff;
-    --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.5);
-    --card-border: rgba(255, 255, 255, 0.07);
+    --card-bg: rgba(255, 255, 255, 0.07);
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 8px 28px rgba(0,0,0,0.55);
+    --card-border: rgba(255, 255, 255, 0.11);
+  }
+}
+
+html {
+  min-height: 100%;
+  background: linear-gradient(160deg, #dce1f2 0%, #e9e0f0 50%, #f2e8dc 100%);
+  background-attachment: fixed;
+}
+
+html.dark {
+  background: linear-gradient(160deg, #09090f 0%, #0f0a12 50%, #12100a 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    background: linear-gradient(160deg, #09090f 0%, #0f0a12 50%, #12100a 100%);
   }
 }
 
 body {
-  background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
   margin: 0;
