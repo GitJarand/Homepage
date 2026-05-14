@@ -71,7 +71,14 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, backgroundColor: bgColor }}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        backgroundColor: bgColor,
+        borderRadius: 'var(--radius)',
+        boxShadow: 'var(--card-shadow)',
+        border: '1px solid var(--card-border)',
+      }}
       className={cn(
         widget.colSpan === 2 && 'sm:col-span-2',
         widget.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
@@ -113,7 +120,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 bg-[var(--color-background)]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-10 bg-[var(--color-background)]/90">
         <div className="relative flex items-center justify-center px-8 py-5">
           <span className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">This is today</span>
           <button
@@ -127,10 +134,10 @@ export default function Dashboard() {
       </header>
 
       {/* Grid */}
-      <main className="pt-10">
+      <main className="px-4 pt-10">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ordered.map((widget) => (
                 <SortableCard
                   key={widget.id}
