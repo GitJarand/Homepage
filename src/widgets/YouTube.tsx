@@ -25,6 +25,7 @@ type ChannelState =
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'homepage:youtube-channels'
+const WATCHED_KEY = 'homepage:youtube-watched'
 
 function loadChannels(): SavedChannel[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') } catch { return [] }
@@ -32,6 +33,14 @@ function loadChannels(): SavedChannel[] {
 
 function saveChannels(channels: SavedChannel[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(channels))
+}
+
+function loadWatched(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(WATCHED_KEY) ?? '[]') as string[]) } catch { return new Set() }
+}
+
+function saveWatched(watched: Set<string>) {
+  localStorage.setItem(WATCHED_KEY, JSON.stringify([...watched]))
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -69,7 +78,17 @@ function useLatestVideo(channel: SavedChannel): ChannelState {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ChannelRow({ channel, onRemove }: { channel: SavedChannel; onRemove: () => void }) {
+function ChannelRow({
+  channel,
+  watched,
+  onMarkWatched,
+  onRemove,
+}: {
+  channel: SavedChannel
+  watched: Set<string>
+  onMarkWatched: (videoId: string) => void
+  onRemove: () => void
+}) {
   const state = useLatestVideo(channel)
 
   return (
@@ -91,6 +110,19 @@ function ChannelRow({ channel, onRemove }: { channel: SavedChannel; onRemove: ()
 
       {state.status === 'success' && (() => {
         const { video } = state
+        const isWatched = watched.has(video.videoId)
+
+        if (isWatched) {
+          return (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-[var(--color-muted-foreground)]">
+                {video.channelName} · up to date
+              </span>
+              <button onClick={onRemove} className="flex-shrink-0 text-xs text-[var(--color-muted-foreground)] hover:text-red-500">✕</button>
+            </div>
+          )
+        }
+
         return (
           <div className="flex gap-2.5">
             <a href={video.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
@@ -118,13 +150,23 @@ function ChannelRow({ channel, onRemove }: { channel: SavedChannel; onRemove: ()
                 </p>
               )}
             </div>
-            <button
-              onClick={onRemove}
-              className="flex-shrink-0 self-start text-xs text-[var(--color-muted-foreground)] hover:text-red-500"
-              aria-label="Remove"
-            >
-              ✕
-            </button>
+            <div className="flex flex-shrink-0 flex-col items-end gap-1.5 self-start">
+              <button
+                onClick={onRemove}
+                className="text-xs text-[var(--color-muted-foreground)] hover:text-red-500"
+                aria-label="Remove channel"
+              >
+                ✕
+              </button>
+              <button
+                onClick={() => onMarkWatched(video.videoId)}
+                className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+                aria-label="Mark as watched"
+                title="Mark as watched"
+              >
+                ✓
+              </button>
+            </div>
           </div>
         )
       })()}
@@ -203,6 +245,7 @@ function AddForm({ onAdd }: { onAdd: (channel: SavedChannel) => void }) {
 
 export function YouTube() {
   const [channels, setChannels] = useState<SavedChannel[]>(loadChannels)
+  const [watched, setWatched] = useState<Set<string>>(loadWatched)
 
   const handleAdd = useCallback((channel: SavedChannel) => {
     setChannels(prev => {
@@ -217,6 +260,14 @@ export function YouTube() {
     setChannels(prev => {
       const next = prev.filter(c => c.channelId !== channelId)
       saveChannels(next)
+      return next
+    })
+  }, [])
+
+  const handleMarkWatched = useCallback((videoId: string) => {
+    setWatched(prev => {
+      const next = new Set(prev).add(videoId)
+      saveWatched(next)
       return next
     })
   }, [])
@@ -237,6 +288,8 @@ export function YouTube() {
             <ChannelRow
               key={channel.channelId}
               channel={channel}
+              watched={watched}
+              onMarkWatched={handleMarkWatched}
               onRemove={() => handleRemove(channel.channelId)}
             />
           ))}
