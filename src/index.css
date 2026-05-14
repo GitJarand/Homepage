@@ -41,17 +41,16 @@
 
 html {
   min-height: 100%;
-  background: linear-gradient(160deg, #dce1f2 0%, #e9e0f0 50%, #f2e8dc 100%);
-  background-attachment: fixed;
+  background: #ffffff;
 }
 
 html.dark {
-  background: linear-gradient(160deg, #09090f 0%, #0f0a12 50%, #12100a 100%);
+  background: #111110;
 }
 
 @media (prefers-color-scheme: dark) {
   html:not(.light) {
-    background: linear-gradient(160deg, #09090f 0%, #0f0a12 50%, #12100a 100%);
+    background: #111110;
   }
 }
 
