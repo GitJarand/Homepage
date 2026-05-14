@@ -37,6 +37,15 @@ const SOURCE_LABELS: Record<string, string> = {
   'pcworld.com': 'PCWorld',
   'techcrunch.com': 'TechCrunch',
   'theverge.com': 'The Verge',
+  'theguardian.com': 'The Guardian',
+  'thenextweb.com': 'TNW',
+  'lifehacker.com': 'Lifehacker',
+  'nytimes.com': 'NYT Tech',
+  'digitaltrends.com': 'Digital Trends',
+  'fastcompany.com': 'Fast Company',
+  'howtogeek.com': 'How-To Geek',
+  'boingboing.net': 'Boing Boing',
+  'daringfireball.net': 'Daring Fireball',
 }
 
 function labelFromUrl(url: string): string {
@@ -127,6 +136,16 @@ const feeds: Record<string, string | string[]> = {
     'https://www.pcworld.com/index.rss',
     'https://techcrunch.com/feed/',
     'https://www.theverge.com/rss/index.xml',
+    'https://www.theguardian.com/technology/rss',
+    'https://thenextweb.com/feed/',
+    'https://lifehacker.com/rss',
+    'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml',
+    'https://www.digitaltrends.com/feed/',
+    'https://www.fastcompany.com/technology/rss',
+    'https://www.howtogeek.com/feed/',
+    'https://boingboing.net/feed',
+    'https://daringfireball.net/feeds/main',
+    'https://rss.slashdot.org/Slashdot/slashdot',
   ],
 }
 
