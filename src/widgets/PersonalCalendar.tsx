@@ -279,7 +279,7 @@ export function PersonalCalendar() {
   return (
     <div className="flex h-full flex-col bg-transparent p-8 min-h-72">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrev}

@@ -255,7 +255,7 @@ export function Packages() {
 
   return (
     <div className="flex h-full flex-col bg-transparent p-8 min-h-72">
-      <h3 className="mb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         Packages
       </h3>
       <div className="flex flex-1 flex-col gap-2">

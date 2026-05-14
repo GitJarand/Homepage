@@ -17,7 +17,7 @@ export function WidgetWrapper({ title, status, error, children, className }: Wid
         className
       )}
     >
-      <h3 className="mb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         {title}
       </h3>
 
