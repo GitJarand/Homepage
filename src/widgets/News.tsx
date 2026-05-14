@@ -6,6 +6,7 @@ interface NewsItem {
   description: string | null
   publishedAt: string | null
   imageUrl: string | null
+  sourceLabel?: string
 }
 
 function timeAgo(dateStr: string): string {
@@ -79,9 +80,12 @@ export function News({ source = 'vg', label }: { source?: string; label?: string
                 <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[var(--color-foreground)]">
                   {item.title}
                 </p>
-                {item.publishedAt && (
+                {(item.publishedAt || item.sourceLabel) && (
                   <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
-                    {timeAgo(item.publishedAt)}
+                    {item.publishedAt && timeAgo(item.publishedAt)}
+                    {item.sourceLabel && (
+                      <span className="opacity-50"> · {item.sourceLabel}</span>
+                    )}
                   </p>
                 )}
               </div>

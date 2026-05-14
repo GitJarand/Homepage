@@ -8,6 +8,42 @@ interface NewsItem {
   description: string | null
   publishedAt: string | null
   imageUrl: string | null
+  sourceLabel?: string
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  'rockpapershotgun.com': 'RPS',
+  'kotaku.com': 'Kotaku',
+  'destructoid.com': 'Destructoid',
+  'eurogamer.net': 'Eurogamer',
+  'pcgamer.com': 'PCGamer',
+  'gamesradar.com': 'GamesRadar',
+  'vg247.com': 'VG247',
+  'videogameschronicle.com': 'VGC',
+  'xbox.com': 'Xbox Wire',
+  'slashdot.org': 'Slashdot',
+  'feedburner.com': 'Penny Arcade',
+  'venturebeat.com': 'VentureBeat',
+  'wired.com': 'Wired',
+  '9to5mac.com': '9to5Mac',
+  '9to5google.com': '9to5Google',
+  'arstechnica.com': 'Ars Technica',
+  'businessinsider.com': 'Business Insider',
+  'engadget.com': 'Engadget',
+  'gizmodo.com': 'Gizmodo',
+  'ycombinator.com': 'Hacker News',
+  'macrumors.com': 'MacRumors',
+  'mashable.com': 'Mashable',
+  'pcworld.com': 'PCWorld',
+  'techcrunch.com': 'TechCrunch',
+  'theverge.com': 'The Verge',
+}
+
+function labelFromUrl(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    return Object.entries(SOURCE_LABELS).find(([k]) => host.includes(k))?.[1] ?? host
+  } catch { return '' }
 }
 
 function decodeEntities(s: string): string {
@@ -31,7 +67,7 @@ function extractAttr(xml: string, tag: string, attr: string): string | null {
   return m ? m[1] : null
 }
 
-function parseItems(xml: string, limit: number): NewsItem[] {
+function parseItems(xml: string, limit: number, sourceLabel?: string): NewsItem[] {
   // Support both RSS <item> and Atom <entry>
   const isAtom = xml.includes('<entry>')
   const tag = isAtom ? 'entry' : 'item'
@@ -57,23 +93,81 @@ function parseItems(xml: string, limit: number): NewsItem[] {
       null
     const imageUrl = rawImage ? decodeEntities(rawImage) : null
 
-    return { title, url, description, publishedAt, imageUrl }
+    return { title, url, description, publishedAt, imageUrl, sourceLabel }
   })
+}
+
+const feeds: Record<string, string | string[]> = {
+  vg: 'https://www.vg.no/rss/feed/',
+  nrk: 'https://www.nrk.no/toppsaker.rss',
+  'reddit-fpl-lfc': 'https://old.reddit.com/r/FantasyPL+LiverpoolFC+soccer/.rss',
+  'tech-gaming': [
+    'https://www.rockpapershotgun.com/feed',
+    'https://kotaku.com/rss',
+    'https://www.destructoid.com/feed',
+    'https://www.eurogamer.net/feed',
+    'https://www.pcgamer.com/feeds.xml',
+    'https://www.gamesradar.com/feeds.xml',
+    'https://www.vg247.com/feed',
+    'https://www.videogameschronicle.com/category/news/feed/',
+    'https://news.xbox.com/en-us/feed/',
+    'https://rss.slashdot.org/Slashdot/slashdotGames',
+    'http://feeds.feedburner.com/pa-mainsite',
+    'https://venturebeat.com/feed/',
+    'https://www.wired.com/feed/rss',
+    'https://9to5mac.com/feed/',
+    'https://9to5google.com/feed/',
+    'https://feeds.arstechnica.com/arstechnica/index',
+    'https://feeds.businessinsider.com/custom/all',
+    'https://www.engadget.com/rss.xml',
+    'https://gizmodo.com/rss',
+    'https://news.ycombinator.com/rss',
+    'https://feeds.macrumors.com/MacRumors-All',
+    'https://mashable.com/feeds/rss/all',
+    'https://www.pcworld.com/index.rss',
+    'https://techcrunch.com/feed/',
+    'https://www.theverge.com/rss/index.xml',
+  ],
 }
 
 news.get('/feed', async (c) => {
   const source = c.req.query('source') ?? 'vg'
   const limit = Math.min(parseInt(c.req.query('limit') ?? '15', 10), 30)
 
-  const feeds: Record<string, string> = {
-    vg: 'https://www.vg.no/rss/feed/',
-    nrk: 'https://www.nrk.no/toppsaker.rss',
-    'reddit-fpl-lfc': 'https://old.reddit.com/r/FantasyPL+LiverpoolFC+soccer/.rss',
-  }
-
   const feedUrl = feeds[source]
   if (!feedUrl) return c.json({ error: 'Unknown source' }, 400)
 
+  // Multi-feed: fetch all in parallel, merge and sort by date
+  if (Array.isArray(feedUrl)) {
+    const results = await Promise.allSettled(
+      feedUrl.map(async url => {
+        const ctrl = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), 5000)
+        try {
+          const res = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0',
+              'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+              'Accept-Encoding': 'identity',
+            },
+            signal: ctrl.signal,
+          })
+          if (!res.ok) return [] as NewsItem[]
+          return parseItems(await res.text(), limit, labelFromUrl(url))
+        } catch { return [] as NewsItem[] }
+        finally { clearTimeout(timer) }
+      })
+    )
+    const all = results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
+    all.sort((a, b) => {
+      const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
+      const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
+      return tb - ta
+    })
+    return c.json({ source, items: all.slice(0, limit) })
+  }
+
+  // Single-feed: existing retry logic
   const isReddit = feedUrl.includes('reddit.com')
   const headers = {
     'User-Agent': isReddit
