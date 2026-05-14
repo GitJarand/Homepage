@@ -12,7 +12,7 @@ export interface WidgetDefinition {
   description: string
   component: React.ComponentType
   colSpan?: 1 | 2 | 3 | 4
-  rowSpan?: 1 | 2
+  rowSpan?: 1 | 2 | 3
   color?: string
   colorDark?: string
 }

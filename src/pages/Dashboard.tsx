@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -37,9 +37,22 @@ function MoonIcon() {
   )
 }
 
-// ─── Order persistence ────────────────────────────────────────────────────────
+// ─── Persistence ─────────────────────────────────────────────────────────────
 
 const ORDER_KEY = 'homepage:widget-order'
+const SIZES_KEY = 'homepage:widget-sizes'
+
+type ColSpan = 1 | 2 | 3 | 4
+type RowSpan = 1 | 2 | 3
+interface WidgetSize { colSpan: ColSpan; rowSpan: RowSpan }
+
+function loadSizes(): Record<string, WidgetSize> {
+  try { return JSON.parse(localStorage.getItem(SIZES_KEY) ?? '{}') } catch { return {} }
+}
+
+function saveSizes(sizes: Record<string, WidgetSize>) {
+  localStorage.setItem(SIZES_KEY, JSON.stringify(sizes))
+}
 
 function loadOrder(defaults: OrderedWidget[]): OrderedWidget[] {
   try {
@@ -59,9 +72,84 @@ function saveOrder(widgets: OrderedWidget[]) {
   localStorage.setItem(ORDER_KEY, JSON.stringify(widgets.map((w) => w.id)))
 }
 
+// ─── Resize handle ────────────────────────────────────────────────────────────
+
+function ResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number) => void }) {
+  const startRef = useRef<{
+    x: number; y: number; unitW: number; unitH: number
+    lastDCol: number; lastDRow: number
+  } | null>(null)
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+
+    const card = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
+    const grid = card?.parentElement
+    if (!card || !grid) return
+
+    const gridStyle = getComputedStyle(grid)
+    const gap = parseFloat(gridStyle.columnGap || '0')
+    const cols = gridStyle.gridTemplateColumns.split(' ').length
+    const gridWidth = grid.getBoundingClientRect().width
+    const unitW = (gridWidth + gap) / cols
+
+    const rowsStr = gridStyle.gridTemplateRows
+    const rowH = rowsStr === 'none' ? card.getBoundingClientRect().height
+      : parseFloat(rowsStr.split(' ')[0])
+    const unitH = rowH + gap
+
+    startRef.current = { x: e.clientX, y: e.clientY, unitW, unitH, lastDCol: 0, lastDRow: 0 }
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!startRef.current) return
+    const { x, y, unitW, unitH, lastDCol, lastDRow } = startRef.current
+    const dCol = Math.round((e.clientX - x) / unitW)
+    const dRow = Math.round((e.clientY - y) / unitH)
+    if (dCol !== lastDCol || dRow !== lastDRow) {
+      onResize(dCol - lastDCol, dRow - lastDRow)
+      startRef.current.lastDCol = dCol
+      startRef.current.lastDRow = dRow
+    }
+  }
+
+  function onPointerUp() {
+    startRef.current = null
+  }
+
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      className="absolute bottom-1.5 right-1.5 z-10 hidden h-4 w-4 cursor-se-resize items-center justify-center rounded opacity-0 transition-opacity group-hover:flex group-hover:opacity-100"
+      style={{ touchAction: 'none' }}
+      title="Drag to resize"
+    >
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M2 9 L9 2 M5 9 L9 5 M8 9 L9 8" stroke="var(--color-muted-foreground)" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    </div>
+  )
+}
+
 // ─── Sortable card ────────────────────────────────────────────────────────────
 
-function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: string | undefined }) {
+function SortableCard({
+  widget,
+  bgColor,
+  colSpan,
+  rowSpan,
+  onResize,
+}: {
+  widget: OrderedWidget
+  bgColor: string | undefined
+  colSpan: ColSpan
+  rowSpan: RowSpan
+  onResize: (dCol: number, dRow: number) => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
@@ -70,6 +158,7 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
 
   return (
     <div
+      data-card
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -78,19 +167,22 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
         borderRadius: 'var(--radius)',
         boxShadow: 'var(--card-shadow)',
         border: '1px solid var(--card-border)',
+        position: 'relative',
       }}
       className={cn(
-        widget.colSpan === 2 && 'sm:col-span-2',
-        widget.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
-        widget.colSpan === 4 && 'sm:col-span-2 lg:col-span-4',
-        widget.rowSpan === 2 && 'sm:row-span-2',
+        colSpan === 2 && 'sm:col-span-2',
+        colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
+        colSpan === 4 && 'sm:col-span-2 lg:col-span-4',
+        rowSpan === 2 && 'sm:row-span-2',
+        rowSpan === 3 && 'sm:row-span-3',
         isDragging ? 'opacity-40' : 'opacity-100',
-        'transition-opacity outline-none',
+        'group transition-opacity outline-none',
       )}
       {...attributes}
       {...listeners}
     >
       <Widget />
+      <ResizeHandle onResize={onResize} />
     </div>
   )
 }
@@ -100,6 +192,20 @@ function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: str
 export default function Dashboard() {
   const { resolvedTheme, toggle } = useTheme()
   const [ordered, setOrdered] = useState<OrderedWidget[]>(() => loadOrder(widgets))
+  const [sizes, setSizes] = useState<Record<string, WidgetSize>>(loadSizes)
+
+  const handleResize = useCallback((id: string, dCol: number, dRow: number) => {
+    setSizes(prev => {
+      const widget = widgets.find(w => w.id === id)
+      const cur = prev[id] ?? { colSpan: widget?.colSpan ?? 1, rowSpan: widget?.rowSpan ?? 1 }
+      const colSpan = Math.max(1, Math.min(4, cur.colSpan + dCol)) as ColSpan
+      const rowSpan = Math.max(1, Math.min(3, cur.rowSpan + dRow)) as RowSpan
+      if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return prev
+      const next = { ...prev, [id]: { colSpan, rowSpan } }
+      saveSizes(next)
+      return next
+    })
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -139,13 +245,21 @@ export default function Dashboard() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {ordered.map((widget) => (
-                <SortableCard
-                  key={widget.id}
-                  widget={widget}
-                  bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
-                />
-              ))}
+              {ordered.map((widget) => {
+                const size = sizes[widget.id]
+                const colSpan = (size?.colSpan ?? widget.colSpan ?? 1) as ColSpan
+                const rowSpan = (size?.rowSpan ?? widget.rowSpan ?? 1) as RowSpan
+                return (
+                  <SortableCard
+                    key={widget.id}
+                    widget={widget}
+                    bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
+                    colSpan={colSpan}
+                    rowSpan={rowSpan}
+                    onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
+                  />
+                )
+              })}
             </div>
           </SortableContext>
         </DndContext>
