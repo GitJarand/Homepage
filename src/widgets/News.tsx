@@ -87,7 +87,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
     setHiddenSources(next)
   }
 
-  const enabledCount = availableSources.length - hiddenSources.size
+  const enabledCount = availableSources.filter(s => !hiddenSources.has(s)).length
 
   return (
     <div className="relative flex h-full flex-col p-8">
