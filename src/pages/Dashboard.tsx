@@ -61,12 +61,10 @@ function saveOrder(widgets: OrderedWidget[]) {
 
 // ─── Sortable card ────────────────────────────────────────────────────────────
 
-function SortableCard({ widget }: { widget: OrderedWidget }) {
+function SortableCard({ widget, bgColor }: { widget: OrderedWidget; bgColor: string | undefined }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
-  const { resolvedTheme } = useTheme()
-  const bgColor = resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color
 
   const Widget = widget.component
 
@@ -134,7 +132,11 @@ export default function Dashboard() {
           <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {ordered.map((widget) => (
-                <SortableCard key={widget.id} widget={widget} />
+                <SortableCard
+                  key={widget.id}
+                  widget={widget}
+                  bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
+                />
               ))}
             </div>
           </SortableContext>
