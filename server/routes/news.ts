@@ -32,18 +32,28 @@ function extractAttr(xml: string, tag: string, attr: string): string | null {
 }
 
 function parseItems(xml: string, limit: number): NewsItem[] {
-  const entries = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1])
+  // Support both RSS <item> and Atom <entry>
+  const isAtom = xml.includes('<entry>')
+  const tag = isAtom ? 'entry' : 'item'
+  const entries = [...xml.matchAll(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, 'g'))].map(m => m[1])
+
   return entries.slice(0, limit).map(entry => {
     const title = extractTag(entry, 'title') ?? 'Untitled'
-    const url = extractTag(entry, 'link') ?? extractTag(entry, 'guid') ?? ''
-    const description = extractTag(entry, 'description')
-    const publishedAt = extractTag(entry, 'pubDate')
 
-    // Try media:content, then enclosure, then og image in description
+    // Atom uses <link href="..."/> (self-closing), RSS uses <link>url</link>
+    const url = extractAttr(entry, 'link', 'href')
+      ?? extractTag(entry, 'link')
+      ?? extractTag(entry, 'guid')
+      ?? ''
+
+    const description = extractTag(entry, 'description') ?? extractTag(entry, 'content')
+    const publishedAt = extractTag(entry, 'pubDate') ?? extractTag(entry, 'published') ?? extractTag(entry, 'updated')
+
     const rawImage =
       extractAttr(entry, 'media:content', 'url') ??
       extractAttr(entry, 'enclosure', 'url') ??
       entry.match(/<img[^>]+src="([^"]+)"/)?.[1] ??
+      description?.match(/<img[^>]+src="([^"]+)"/)?.[1] ??
       null
     const imageUrl = rawImage ? decodeEntities(rawImage) : null
 
@@ -58,15 +68,21 @@ news.get('/feed', async (c) => {
   const feeds: Record<string, string> = {
     vg: 'https://www.vg.no/rss/feed/',
     nrk: 'https://www.nrk.no/toppsaker.rss',
+    'reddit-fpl-lfc': 'https://old.reddit.com/r/FantasyPL+LiverpoolFC+soccer/.rss',
   }
 
   const feedUrl = feeds[source]
   if (!feedUrl) return c.json({ error: 'Unknown source' }, 400)
 
+  const isReddit = feedUrl.includes('reddit.com')
   const headers = {
-    'User-Agent': 'Mozilla/5.0',
-    'Accept': 'application/rss+xml, application/xml, text/xml',
+    'User-Agent': isReddit
+      ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      : 'Mozilla/5.0',
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'identity',
+    ...(isReddit && { 'Cookie': '' }),
   }
 
   for (let attempt = 0; attempt < 3; attempt++) {

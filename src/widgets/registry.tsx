@@ -83,9 +83,9 @@ export const widgets: WidgetDefinition[] = [
   },
   {
     id: 'rss-feed-1',
-    title: 'RSS Feed 1',
-    description: 'RSS feed — coming soon',
-    component: () => <Placeholder title="RSS Feed 1" />,
+    title: 'FPL / LFC / Soccer',
+    description: 'Reddit: FantasyPL + LiverpoolFC + soccer',
+    component: () => <News source="reddit-fpl-lfc" label="FPL / LFC / Soccer" />,
     rowSpan: 3,
     color: 'rgba(52, 199, 89, 0.08)',        colorDark: 'rgba(52, 199, 89, 0.14)',
   },
