@@ -11,6 +11,7 @@ import { Placeholder } from './Placeholder'
 import { News } from './News'
 
 export const widgets: WidgetDefinition[] = [
+  // ── Row 1: 6 small cards ──────────────────────────────────────────────────
   {
     id: 'personal-calendar',
     title: 'Personal Calendar',
@@ -47,12 +48,21 @@ export const widgets: WidgetDefinition[] = [
     color: 'rgba(255, 59, 48, 0.12)',        colorDark: 'rgba(255, 59, 48, 0.20)',
   },
   {
+    id: 'placeholder-6',
+    title: 'Slot 6',
+    description: 'Available',
+    component: () => <Placeholder title="Slot 6" />,
+    color: 'rgba(255, 149, 0, 0.10)',        colorDark: 'rgba(255, 149, 0, 0.18)',
+  },
+
+  // ── Row 2+: tall section ──────────────────────────────────────────────────
+  {
     id: 'youtube',
     title: 'YouTube',
     description: 'Latest videos from your channels',
     component: YouTube,
     colSpan: 2,
-    rowSpan: 2,
+    rowSpan: 3,
     color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.16)',
   },
   {
@@ -60,7 +70,7 @@ export const widgets: WidgetDefinition[] = [
     title: 'VG',
     description: 'Latest news from VG',
     component: News,
-    rowSpan: 2,
+    rowSpan: 3,
     color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.14)',
   },
   {
@@ -68,9 +78,27 @@ export const widgets: WidgetDefinition[] = [
     title: 'NRK',
     description: 'Latest news from NRK',
     component: () => <News source="nrk" label="NRK" />,
-    rowSpan: 2,
+    rowSpan: 3,
     color: 'rgba(0, 122, 255, 0.08)',        colorDark: 'rgba(0, 122, 255, 0.14)',
   },
+  {
+    id: 'rss-feed-1',
+    title: 'RSS Feed 1',
+    description: 'RSS feed — coming soon',
+    component: () => <Placeholder title="RSS Feed 1" />,
+    rowSpan: 3,
+    color: 'rgba(52, 199, 89, 0.08)',        colorDark: 'rgba(52, 199, 89, 0.14)',
+  },
+  {
+    id: 'rss-feed-2',
+    title: 'RSS Feed 2',
+    description: 'RSS feed — coming soon',
+    component: () => <Placeholder title="RSS Feed 2" />,
+    rowSpan: 3,
+    color: 'rgba(175, 82, 222, 0.08)',       colorDark: 'rgba(175, 82, 222, 0.14)',
+  },
+
+  // ── Backfill below YouTube (dense placement) ──────────────────────────────
   {
     id: 'placeholder-7',
     title: 'Slot 7',
