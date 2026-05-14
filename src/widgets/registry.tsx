@@ -85,7 +85,7 @@ export const widgets: WidgetDefinition[] = [
     id: 'rss-feed-1',
     title: 'FPL / LFC / Soccer',
     description: 'Reddit: FantasyPL + LiverpoolFC + soccer',
-    component: () => <News source="reddit-fpl-lfc" label="FPL / LFC / Soccer" />,
+    component: () => <News source="reddit-fpl-lfc" label="FPL / LFC / Soccer" fetchLimit={30} defaultHidden={['r/Gunners', 'r/MCFC', 'r/chelseafc', 'r/PremierLeague', 'r/reddevils', 'r/coys']} />,
     rowSpan: 3,
     color: 'rgba(52, 199, 89, 0.08)',        colorDark: 'rgba(52, 199, 89, 0.14)',
   },

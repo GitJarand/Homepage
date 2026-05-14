@@ -18,20 +18,23 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d`
 }
 
-function loadHidden(source: string): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(`homepage:news-hidden:${source}`) ?? '[]') as string[]) }
-  catch { return new Set() }
+function loadHidden(source: string, defaultHidden: string[] = []): Set<string> {
+  try {
+    const stored = localStorage.getItem(`homepage:news-hidden:${source}`)
+    if (stored !== null) return new Set(JSON.parse(stored) as string[])
+    return new Set(defaultHidden)
+  } catch { return new Set(defaultHidden) }
 }
 
 function saveHidden(source: string, hidden: Set<string>) {
   localStorage.setItem(`homepage:news-hidden:${source}`, JSON.stringify([...hidden]))
 }
 
-export function News({ source = 'vg', label, fetchLimit = 15 }: { source?: string; label?: string; fetchLimit?: number }) {
+export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = [] }: { source?: string; label?: string; fetchLimit?: number; defaultHidden?: string[] }) {
   const [items, setItems] = useState<NewsItem[]>([])
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading')
   const [error, setError] = useState<string | null>(null)
-  const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => loadHidden(source))
+  const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => loadHidden(source, defaultHidden))
   const [showFilter, setShowFilter] = useState(false)
   const filterRef = useRef<HTMLDivElement>(null)
 

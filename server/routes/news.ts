@@ -50,6 +50,9 @@ const SOURCE_LABELS: Record<string, string> = {
 
 function labelFromUrl(url: string): string {
   try {
+    // Reddit: extract subreddit name as label
+    const redditMatch = url.match(/reddit\.com\/r\/([^/+.]+)/)
+    if (redditMatch) return `r/${redditMatch[1]}`
     const host = new URL(url).hostname.replace(/^www\./, '')
     return Object.entries(SOURCE_LABELS).find(([k]) => host.includes(k))?.[1] ?? host
   } catch { return '' }
@@ -109,7 +112,17 @@ function parseItems(xml: string, limit: number, sourceLabel?: string): NewsItem[
 const feeds: Record<string, string | string[]> = {
   vg: 'https://www.vg.no/rss/feed/',
   nrk: 'https://www.nrk.no/toppsaker.rss',
-  'reddit-fpl-lfc': 'https://old.reddit.com/r/FantasyPL+LiverpoolFC+soccer/.rss',
+  'reddit-fpl-lfc': [
+    'https://old.reddit.com/r/FantasyPL/.rss',
+    'https://old.reddit.com/r/LiverpoolFC/.rss',
+    'https://old.reddit.com/r/soccer/.rss',
+    'https://old.reddit.com/r/Gunners/.rss',
+    'https://old.reddit.com/r/MCFC/.rss',
+    'https://old.reddit.com/r/chelseafc/.rss',
+    'https://old.reddit.com/r/PremierLeague/.rss',
+    'https://old.reddit.com/r/reddevils/.rss',
+    'https://old.reddit.com/r/coys/.rss',
+  ],
   'tech-gaming': [
     'https://www.rockpapershotgun.com/feed',
     'https://kotaku.com/rss',
@@ -163,11 +176,15 @@ news.get('/feed', async (c) => {
         const ctrl = new AbortController()
         const timer = setTimeout(() => ctrl.abort(), 5000)
         try {
+          const isRedditUrl = url.includes('reddit.com')
           const res = await fetch(url, {
             headers: {
-              'User-Agent': 'Mozilla/5.0',
+              'User-Agent': isRedditUrl
+                ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+                : 'Mozilla/5.0',
               'Accept': 'application/rss+xml, application/xml, text/xml, */*',
               'Accept-Encoding': 'identity',
+              ...(isRedditUrl && { 'Cookie': '' }),
             },
             signal: ctrl.signal,
           })
