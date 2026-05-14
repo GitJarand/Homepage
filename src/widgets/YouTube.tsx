@@ -275,13 +275,12 @@ export function YouTube() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8">
-      <div className="relative mb-4 flex shrink-0 flex-col items-center gap-1.5 border-b border-[var(--color-border)] pb-4">
+    <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
+      <div className="relative mb-3 flex shrink-0 flex-col items-center border-b border-[var(--color-border)] pb-3">
         <svg width="36" height="25" viewBox="0 0 36 25" fill="none">
           <rect width="36" height="25" rx="5" fill="#FF0000"/>
           <polygon points="14,7 27,12.5 14,18" fill="white"/>
         </svg>
-        <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">YouTube</h3>
         <button
           onClick={() => setRefreshKey(k => k + 1)}
           className="absolute right-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"

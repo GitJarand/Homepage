@@ -101,16 +101,13 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
   const logo = LOGOS[source]
 
   return (
-    <div className="relative flex h-full flex-col p-8">
-      <div className="relative mb-4 flex shrink-0 flex-col items-center gap-1.5 border-b border-[var(--color-border)] pb-4">
+    <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
+      <div className="relative mb-3 flex shrink-0 flex-col items-center border-b border-[var(--color-border)] pb-3">
         {logo && (
           logo.type === 'img'
             ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
             : <span className="text-3xl leading-none">{logo.value}</span>
         )}
-        <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">
-          {label ?? source.toUpperCase()}
-        </h3>
         <div className="absolute right-0 top-0 flex items-center gap-1">
           <button
             onClick={() => setRefreshKey(k => k + 1)}

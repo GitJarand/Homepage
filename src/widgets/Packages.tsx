@@ -254,10 +254,9 @@ export function Packages() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8">
-      <div className="mb-4 flex shrink-0 flex-col items-center gap-1.5 border-b border-[var(--color-border)] pb-4">
+    <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
+      <div className="mb-3 flex shrink-0 flex-col items-center border-b border-[var(--color-border)] pb-3">
         <div className="text-3xl leading-none">📦</div>
-        <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">Packages</h3>
       </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         {entries.length === 0 && (

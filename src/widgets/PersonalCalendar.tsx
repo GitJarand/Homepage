@@ -277,9 +277,9 @@ export function PersonalCalendar() {
   const handleNext = useCallback(() => setDate((d) => navigate(d, view, 1)), [view])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8">
+    <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+      <div className="mb-3 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
         <div className="flex items-center gap-1">
           <span className="mr-1 text-lg leading-none">📅</span>
           <button
