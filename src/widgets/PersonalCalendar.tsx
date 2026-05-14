@@ -277,7 +277,7 @@ export function PersonalCalendar() {
   const handleNext = useCallback(() => setDate((d) => navigate(d, view, 1)), [view])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8 min-h-72">
+    <div className="flex h-full flex-col bg-transparent p-8">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
         <div className="flex items-center gap-1">
@@ -316,7 +316,7 @@ export function PersonalCalendar() {
       </div>
 
       {/* Body */}
-      <div className="min-h-32 flex-1">
+      <div className="flex-1 overflow-y-auto">
         {status === 'loading' && (
           <div className="flex h-32 items-center justify-center">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-muted-foreground)]" />

@@ -35,7 +35,7 @@ export function News({ source = 'vg', label }: { source?: string; label?: string
 
   return (
     <div className="flex h-full flex-col p-8">
-      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <h3 className="mb-4 shrink-0 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         {label ?? source.toUpperCase()}
       </h3>
 

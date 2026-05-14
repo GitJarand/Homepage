@@ -272,7 +272,7 @@ export function YouTube() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8 min-h-72">
+    <div className="flex h-full flex-col bg-transparent p-8">
       <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         YouTube
       </h3>

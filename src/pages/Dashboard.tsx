@@ -234,6 +234,7 @@ function SortableCard({
         boxShadow: 'var(--card-shadow)',
         border: '1px solid var(--card-border)',
         position: 'relative',
+        overflow: 'hidden',
       }}
       className={cn(
         colSpan === 2 && 'col-span-2',
@@ -380,7 +381,7 @@ export default function Dashboard() {
                 className="grid gap-4 [grid-auto-flow:dense]"
                 style={{
                   gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
-                  gridAutoRows: 'minmax(220px, auto)',
+                  gridAutoRows: '260px',
                 }}
               >
                 {ordered.map((widget) => {
