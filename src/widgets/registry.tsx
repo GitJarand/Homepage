@@ -14,7 +14,6 @@ export const widgets: WidgetDefinition[] = [
     title: 'Personal Calendar',
     description: 'Upcoming personal events',
     component: PersonalCalendar,
-    colSpan: 2,
     color: 'rgba(0, 122, 255, 0.13)',       colorDark: 'rgba(0, 122, 255, 0.22)',
   },
   {
