@@ -93,7 +93,7 @@ export const widgets: WidgetDefinition[] = [
     id: 'rss-feed-2',
     title: 'Tech & Gaming',
     description: 'Aggregated tech and gaming news',
-    component: () => <News source="tech-gaming" label="Tech & Gaming" />,
+    component: () => <News source="tech-gaming" label="Tech & Gaming" fetchLimit={30} />,
     rowSpan: 3,
     color: 'rgba(175, 82, 222, 0.08)',       colorDark: 'rgba(175, 82, 222, 0.14)',
   },

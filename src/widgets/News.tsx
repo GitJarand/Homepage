@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 
 interface NewsItem {
   title: string
@@ -18,13 +18,25 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d`
 }
 
-export function News({ source = 'vg', label }: { source?: string; label?: string }) {
+function loadHidden(source: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(`homepage:news-hidden:${source}`) ?? '[]') as string[]) }
+  catch { return new Set() }
+}
+
+function saveHidden(source: string, hidden: Set<string>) {
+  localStorage.setItem(`homepage:news-hidden:${source}`, JSON.stringify([...hidden]))
+}
+
+export function News({ source = 'vg', label, fetchLimit = 15 }: { source?: string; label?: string; fetchLimit?: number }) {
   const [items, setItems] = useState<NewsItem[]>([])
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => loadHidden(source))
+  const [showFilter, setShowFilter] = useState(false)
+  const filterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetch(`/api/news/feed?source=${encodeURIComponent(source)}&limit=15`)
+    fetch(`/api/news/feed?source=${encodeURIComponent(source)}&limit=${fetchLimit}`)
       .then(async r => {
         const json = await r.json() as { items?: NewsItem[]; error?: string }
         if (json.error) { setError(json.error); setStatus('error'); return }
@@ -32,13 +44,96 @@ export function News({ source = 'vg', label }: { source?: string; label?: string
         setStatus('success')
       })
       .catch((err: Error) => { setError(err.message); setStatus('error') })
-  }, [source])
+  }, [source, fetchLimit])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showFilter) return
+    function handler(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setShowFilter(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showFilter])
+
+  const availableSources = useMemo(
+    () => [...new Set(items.map(i => i.sourceLabel).filter(Boolean) as string[])].sort(),
+    [items]
+  )
+
+  const filteredItems = useMemo(
+    () => items.filter(i => !i.sourceLabel || !hiddenSources.has(i.sourceLabel)),
+    [items, hiddenSources]
+  )
+
+  function toggleSource(src: string) {
+    setHiddenSources(prev => {
+      const next = new Set(prev)
+      if (next.has(src)) next.delete(src)
+      else next.add(src)
+      saveHidden(source, next)
+      return next
+    })
+  }
+
+  function toggleAll(enable: boolean) {
+    const next = enable ? new Set<string>() : new Set(availableSources)
+    saveHidden(source, next)
+    setHiddenSources(next)
+  }
+
+  const enabledCount = availableSources.length - hiddenSources.size
 
   return (
-    <div className="flex h-full flex-col p-8">
-      <h3 className="mb-4 shrink-0 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-        {label ?? source.toUpperCase()}
-      </h3>
+    <div className="relative flex h-full flex-col p-8">
+      <div className="mb-4 flex shrink-0 items-center justify-between border-b border-[var(--color-border)] pb-4">
+        <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+          {label ?? source.toUpperCase()}
+        </h3>
+        {availableSources.length > 1 && (
+          <div ref={filterRef} className="relative">
+            <button
+              onClick={() => setShowFilter(v => !v)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            >
+              Sources
+              {hiddenSources.size > 0 && (
+                <span className="rounded-full bg-[#007AFF] px-1.5 py-0.5 text-[9px] text-white">
+                  {enabledCount}/{availableSources.length}
+                </span>
+              )}
+              <span className="text-[9px] opacity-60">{showFilter ? '▲' : '▼'}</span>
+            </button>
+
+            {showFilter && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-1 shadow-lg">
+                <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5">
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">Sources</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => toggleAll(true)} className="text-[10px] text-[#007AFF] hover:underline">All</button>
+                    <button onClick={() => toggleAll(false)} className="text-[10px] text-[#007AFF] hover:underline">None</button>
+                  </div>
+                </div>
+                <div className="max-h-56 overflow-y-auto">
+                  {availableSources.map(src => (
+                    <label key={src} className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={!hiddenSources.has(src)}
+                        onChange={() => toggleSource(src)}
+                        className="accent-[#007AFF]"
+                      />
+                      <span className="text-[12px] text-[var(--color-foreground)]">{src}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {status === 'loading' && (
         <div className="flex flex-col gap-3">
@@ -61,13 +156,13 @@ export function News({ source = 'vg', label }: { source?: string; label?: string
 
       {status === 'success' && (
         <div className="flex flex-col divide-y divide-[var(--color-border)] overflow-y-auto">
-          {items.map((item, i) => (
+          {filteredItems.map((item, i) => (
             <a
               key={i}
               href={item.url}
               target="_blank"
               rel="noreferrer"
-              className="flex gap-3 py-2.5 first:pt-0 hover:opacity-75 transition-opacity"
+              className="flex gap-3 py-2.5 first:pt-0 transition-opacity hover:opacity-75"
             >
               {item.imageUrl && (
                 <img
