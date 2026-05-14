@@ -108,7 +108,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
             ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
             : <span className="text-3xl leading-none">{logo.value}</span>
         )}
-        <div className="absolute right-0 top-0 flex items-center gap-1">
+        <div className="absolute left-0 top-0 flex items-center gap-1">
           <button
             onClick={() => setRefreshKey(k => k + 1)}
             disabled={status === 'loading'}
