@@ -59,8 +59,11 @@ youtube.get('/resolve', async (c) => {
       headers: { 'User-Agent': 'Mozilla/5.0' },
     }).then(r => r.text())
 
-    const idMatch = html.match(/"channelId":"(UC[\w-]{22})"/)
-      ?? html.match(/\/channel\/(UC[\w-]{22})/)
+    // Canonical link or og:url are always the page's own channel — most reliable
+    const idMatch =
+      html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/)
+      ?? html.match(/<meta property="og:url" content="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/)
+      ?? html.match(/"browseId":"(UC[\w-]{22})"/)
     if (!idMatch) return c.json({ error: 'Could not find channel ID' }, 404)
     const channelId = idMatch[1]
 
