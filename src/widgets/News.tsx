@@ -36,9 +36,11 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
   const [error, setError] = useState<string | null>(null)
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => loadHidden(source, defaultHidden))
   const [showFilter, setShowFilter] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const filterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    setStatus('loading')
     fetch(`/api/news/feed?source=${encodeURIComponent(source)}&limit=${fetchLimit}`)
       .then(async r => {
         const json = await r.json() as { items?: NewsItem[]; error?: string }
@@ -47,7 +49,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
         setStatus('success')
       })
       .catch((err: Error) => { setError(err.message); setStatus('error') })
-  }, [source, fetchLimit])
+  }, [source, fetchLimit, refreshKey])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -95,6 +97,17 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
         <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
           {label ?? source.toUpperCase()}
         </h3>
+        <button
+          onClick={() => setRefreshKey(k => k + 1)}
+          disabled={status === 'loading'}
+          className="ml-auto rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
+          title="Refresh"
+        >
+          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+        </button>
         {availableSources.length > 1 && (
           <div ref={filterRef} className="relative">
             <button
