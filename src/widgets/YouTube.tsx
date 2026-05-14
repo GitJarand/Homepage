@@ -76,9 +76,9 @@ function useLatestVideo(channel: SavedChannel): ChannelState {
   return state
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Channel card ─────────────────────────────────────────────────────────────
 
-function ChannelRow({
+function ChannelCard({
   channel,
   watched,
   onMarkWatched,
@@ -91,88 +91,112 @@ function ChannelRow({
 }) {
   const state = useLatestVideo(channel)
 
+  // Loading skeleton
+  if (state.status === 'loading') {
+    return (
+      <div className="flex flex-col gap-1.5 rounded border border-[var(--color-border)] p-2">
+        <div className="aspect-video w-full animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="h-2.5 w-2/3 animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="h-2 w-full animate-pulse rounded bg-[var(--color-border)]" />
+      </div>
+    )
+  }
+
+  // Error state
+  if (state.status === 'error') {
+    return (
+      <div className="group relative flex flex-col gap-1 rounded border border-[var(--color-border)] p-2">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">{channel.name}</p>
+        <p className="text-[10px] text-red-400">{state.message}</p>
+        <button
+          onClick={onRemove}
+          className="absolute right-1.5 top-1.5 hidden text-[10px] text-[var(--color-muted-foreground)] hover:text-red-500 group-hover:block"
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
+
+  const { video } = state
+  const isWatched = watched.has(video.videoId)
+
+  // Watched — compact chip
+  if (isWatched) {
+    return (
+      <div className="group relative flex flex-col gap-1 rounded border border-[var(--color-border)] p-2 opacity-40">
+        <div className="aspect-video w-full overflow-hidden rounded">
+          <img src={video.thumbnail} alt="" className="h-full w-full object-cover grayscale" />
+        </div>
+        <p className="truncate text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          {video.channelName}
+        </p>
+        <button
+          onClick={onRemove}
+          className="absolute right-1.5 top-1.5 hidden text-[10px] text-[var(--color-muted-foreground)] hover:text-red-500 group-hover:block"
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
+
+  // Unwatched — full card
   return (
-    <li className="flex flex-col gap-1.5 rounded border border-[var(--color-border)] p-2.5">
-      {state.status === 'loading' && (
-        <div className="flex items-center gap-2 py-1">
-          <div className="h-3 w-3 animate-spin rounded-full border border-[var(--color-border)] border-t-[var(--color-muted-foreground)]" />
-          <span className="text-xs text-[var(--color-muted-foreground)]">{channel.name}</span>
+    <div className="group relative flex flex-col gap-1.5 rounded border border-[var(--color-border)] p-2">
+      {/* Thumbnail */}
+      <a href={video.url} target="_blank" rel="noreferrer" className="block">
+        <div className="aspect-video w-full overflow-hidden rounded">
+          <img
+            src={video.thumbnail}
+            alt={video.title}
+            className="h-full w-full object-cover transition-opacity hover:opacity-90"
+          />
         </div>
-      )}
+      </a>
 
-      {state.status === 'error' && (
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-[var(--color-muted-foreground)]">{channel.name}</span>
-          <span className="text-xs text-red-400">{state.message}</span>
-          <button onClick={onRemove} className="text-xs text-[var(--color-muted-foreground)] hover:text-red-500">✕</button>
-        </div>
-      )}
+      {/* Meta */}
+      <div className="min-w-0">
+        <p className="truncate text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          {video.channelName}
+        </p>
+        <a
+          href={video.url}
+          target="_blank"
+          rel="noreferrer"
+          className="line-clamp-2 text-[11px] font-medium leading-snug text-[var(--color-foreground)] hover:underline"
+        >
+          {video.title}
+        </a>
+        {video.publishedAt && (
+          <p className="mt-0.5 text-[10px] text-[var(--color-muted-foreground)]">
+            {timeAgo(video.publishedAt)}
+          </p>
+        )}
+      </div>
 
-      {state.status === 'success' && (() => {
-        const { video } = state
-        const isWatched = watched.has(video.videoId)
-
-        if (isWatched) {
-          return (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-[var(--color-muted-foreground)]">
-                {video.channelName} · up to date
-              </span>
-              <button onClick={onRemove} className="flex-shrink-0 text-xs text-[var(--color-muted-foreground)] hover:text-red-500">✕</button>
-            </div>
-          )
-        }
-
-        return (
-          <div className="flex gap-2.5">
-            <a href={video.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
-              <img
-                src={video.thumbnail}
-                alt={video.title}
-                className="h-[54px] w-24 rounded object-cover"
-              />
-            </a>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                {video.channelName}
-              </p>
-              <a
-                href={video.url}
-                target="_blank"
-                rel="noreferrer"
-                className="line-clamp-2 text-xs font-medium leading-snug text-[var(--color-foreground)] hover:underline"
-              >
-                {video.title}
-              </a>
-              {video.publishedAt && (
-                <p className="mt-0.5 text-[11px] text-[var(--color-muted-foreground)]">
-                  {timeAgo(video.publishedAt)}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-shrink-0 flex-col items-end gap-1.5 self-start">
-              <button
-                onClick={onRemove}
-                className="text-xs text-[var(--color-muted-foreground)] hover:text-red-500"
-                aria-label="Remove channel"
-              >
-                ✕
-              </button>
-              <button
-                onClick={() => onMarkWatched(video.videoId)}
-                className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
-                aria-label="Mark as watched"
-                title="Mark as watched"
-              >
-                ✓
-              </button>
-            </div>
-          </div>
-        )
-      })()}
-    </li>
+      {/* Hover actions */}
+      <div className="absolute right-1.5 top-1.5 hidden flex-col gap-1 group-hover:flex">
+        <button
+          onClick={onRemove}
+          className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-red-500/80"
+          title="Remove channel"
+        >
+          ✕
+        </button>
+        <button
+          onClick={() => onMarkWatched(video.videoId)}
+          className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-green-500/80"
+          title="Mark as watched"
+        >
+          ✓
+        </button>
+      </div>
+    </div>
   )
 }
+
+// ─── Add form ─────────────────────────────────────────────────────────────────
 
 function AddForm({ onAdd }: { onAdd: (channel: SavedChannel) => void }) {
   const [open, setOpen] = useState(false)
@@ -277,23 +301,25 @@ export function YouTube() {
       <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         YouTube
       </h3>
-      <div className="flex flex-1 flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {channels.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">
             No channels added
           </p>
         )}
-        <ul className="space-y-2">
-          {channels.map(channel => (
-            <ChannelRow
-              key={channel.channelId}
-              channel={channel}
-              watched={watched}
-              onMarkWatched={handleMarkWatched}
-              onRemove={() => handleRemove(channel.channelId)}
-            />
-          ))}
-        </ul>
+        {channels.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {channels.map(channel => (
+              <ChannelCard
+                key={channel.channelId}
+                channel={channel}
+                watched={watched}
+                onMarkWatched={handleMarkWatched}
+                onRemove={() => handleRemove(channel.channelId)}
+              />
+            ))}
+          </div>
+        )}
         <AddForm onAdd={handleAdd} />
       </div>
     </div>
