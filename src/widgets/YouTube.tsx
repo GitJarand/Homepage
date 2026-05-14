@@ -121,16 +121,12 @@ function ChannelCard({
   const { video } = state
   const isWatched = watched.has(video.videoId)
 
-  // Watched — compact chip
+  // Watched — faded row
   if (isWatched) {
     return (
-      <div className="group relative flex flex-col gap-1 rounded border border-[var(--color-border)] p-2 opacity-40">
-        <div className="aspect-video w-full overflow-hidden rounded">
-          <img src={video.thumbnail} alt="" className="h-full w-full object-cover grayscale" />
-        </div>
-        <p className="truncate text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          {video.channelName}
-        </p>
+      <div className="group relative flex items-center gap-2 rounded border border-[var(--color-border)] p-2 opacity-40">
+        <img src={video.thumbnail} alt="" className="h-10 w-[72px] flex-shrink-0 rounded object-cover grayscale" />
+        <p className="truncate text-[10px] text-[var(--color-muted-foreground)]">{video.channelName}</p>
         <button
           onClick={onRemove}
           className="absolute right-1.5 top-1.5 hidden text-[10px] text-[var(--color-muted-foreground)] hover:text-red-500 group-hover:block"
@@ -141,22 +137,17 @@ function ChannelCard({
     )
   }
 
-  // Unwatched — full card
+  // Unwatched
   return (
-    <div className="group relative flex flex-col gap-1.5 rounded border border-[var(--color-border)] p-2">
-      {/* Thumbnail */}
-      <a href={video.url} target="_blank" rel="noreferrer" className="block">
-        <div className="aspect-video w-full overflow-hidden rounded">
-          <img
-            src={video.thumbnail}
-            alt={video.title}
-            className="h-full w-full object-cover transition-opacity hover:opacity-90"
-          />
-        </div>
+    <div className="group relative flex gap-2 rounded border border-[var(--color-border)] p-2">
+      <a href={video.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
+        <img
+          src={video.thumbnail}
+          alt={video.title}
+          className="h-10 w-[72px] rounded object-cover hover:opacity-90"
+        />
       </a>
-
-      {/* Meta */}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
           {video.channelName}
         </p>
@@ -169,28 +160,12 @@ function ChannelCard({
           {video.title}
         </a>
         {video.publishedAt && (
-          <p className="mt-0.5 text-[10px] text-[var(--color-muted-foreground)]">
-            {timeAgo(video.publishedAt)}
-          </p>
+          <p className="mt-0.5 text-[10px] text-[var(--color-muted-foreground)]">{timeAgo(video.publishedAt)}</p>
         )}
       </div>
-
-      {/* Hover actions */}
       <div className="absolute right-1.5 top-1.5 hidden flex-col gap-1 group-hover:flex">
-        <button
-          onClick={onRemove}
-          className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-red-500/80"
-          title="Remove channel"
-        >
-          ✕
-        </button>
-        <button
-          onClick={() => onMarkWatched(video.videoId)}
-          className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-green-500/80"
-          title="Mark as watched"
-        >
-          ✓
-        </button>
+        <button onClick={onRemove} className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-red-500/80" title="Remove">✕</button>
+        <button onClick={() => onMarkWatched(video.videoId)} className="rounded bg-black/40 px-1 py-0.5 text-[10px] text-white hover:bg-green-500/80" title="Mark watched">✓</button>
       </div>
     </div>
   )
