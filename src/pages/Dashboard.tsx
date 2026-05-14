@@ -43,10 +43,10 @@ const ORDER_KEY = 'homepage:widget-order'
 const SIZES_KEY = 'homepage:widget-sizes'
 const COLS_KEY  = 'homepage:col-widths'
 
-const NUM_COLS = 4
+const NUM_COLS = 6
 const GAP = 16 // gap-4
 
-type ColSpan = 1 | 2 | 3 | 4
+type ColSpan = 1 | 2 | 3 | 4 | 5 | 6
 type RowSpan = 1 | 2 | 3
 interface WidgetSize { colSpan: ColSpan; rowSpan: RowSpan }
 
@@ -234,11 +234,14 @@ function SortableCard({
         boxShadow: 'var(--card-shadow)',
         border: '1px solid var(--card-border)',
         position: 'relative',
+        overflow: 'hidden',
       }}
       className={cn(
         colSpan === 2 && 'col-span-2',
         colSpan === 3 && 'col-span-3',
         colSpan === 4 && 'col-span-4',
+        colSpan === 5 && 'col-span-5',
+        colSpan === 6 && 'col-span-6',
         rowSpan === 2 && 'row-span-2',
         rowSpan === 3 && 'row-span-3',
         isDragging ? 'opacity-40' : 'opacity-100',
@@ -305,7 +308,7 @@ export default function Dashboard() {
     setSizes(prev => {
       const widget = widgets.find(w => w.id === id)
       const cur = prev[id] ?? { colSpan: widget?.colSpan ?? 1, rowSpan: widget?.rowSpan ?? 1 }
-      const colSpan = Math.max(1, Math.min(4, cur.colSpan + dCol)) as ColSpan
+      const colSpan = Math.max(1, Math.min(NUM_COLS, cur.colSpan + dCol)) as ColSpan
       const rowSpan = Math.max(1, Math.min(3, cur.rowSpan + dRow)) as RowSpan
       if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return prev
       const next = { ...prev, [id]: { colSpan, rowSpan } }
@@ -378,7 +381,7 @@ export default function Dashboard() {
                 className="grid gap-4 [grid-auto-flow:dense]"
                 style={{
                   gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
-                  gridAutoRows: 'minmax(220px, auto)',
+                  gridAutoRows: '260px',
                 }}
               >
                 {ordered.map((widget) => {

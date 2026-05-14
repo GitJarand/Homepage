@@ -59,7 +59,7 @@ function timeAgo(iso: string): string {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-function useLatestVideo(channel: SavedChannel): ChannelState {
+function useLatestVideo(channel: SavedChannel, refreshKey: number): ChannelState {
   const [state, setState] = useState<ChannelState>({ status: 'loading' })
 
   useEffect(() => {
@@ -71,7 +71,7 @@ function useLatestVideo(channel: SavedChannel): ChannelState {
         else setState({ status: 'success', video: json })
       })
       .catch((err: Error) => setState({ status: 'error', message: err.message }))
-  }, [channel.channelId])
+  }, [channel.channelId, refreshKey])
 
   return state
 }
@@ -83,13 +83,15 @@ function ChannelCard({
   watched,
   onMarkWatched,
   onRemove,
+  refreshKey,
 }: {
   channel: SavedChannel
   watched: Set<string>
   onMarkWatched: (videoId: string) => void
   onRemove: () => void
+  refreshKey: number
 }) {
-  const state = useLatestVideo(channel)
+  const state = useLatestVideo(channel, refreshKey)
 
   // Loading skeleton
   if (state.status === 'loading') {
@@ -245,6 +247,7 @@ function AddForm({ onAdd }: { onAdd: (channel: SavedChannel) => void }) {
 export function YouTube() {
   const [channels, setChannels] = useState<SavedChannel[]>(loadChannels)
   const [watched, setWatched] = useState<Set<string>>(loadWatched)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const handleAdd = useCallback((channel: SavedChannel) => {
     setChannels(prev => {
@@ -272,10 +275,20 @@ export function YouTube() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-transparent p-8 min-h-72">
-      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-        YouTube
-      </h3>
+    <div className="flex h-full flex-col bg-transparent p-8">
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+        <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">YouTube</h3>
+        <button
+          onClick={() => setRefreshKey(k => k + 1)}
+          className="rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          title="Refresh"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+        </button>
+      </div>
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {channels.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">
@@ -291,6 +304,7 @@ export function YouTube() {
                 watched={watched}
                 onMarkWatched={handleMarkWatched}
                 onRemove={() => handleRemove(channel.channelId)}
+                refreshKey={refreshKey}
               />
             ))}
           </div>

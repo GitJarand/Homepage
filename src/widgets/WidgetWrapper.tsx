@@ -13,15 +13,15 @@ export function WidgetWrapper({ title, status, error, children, className }: Wid
   return (
     <div
       className={cn(
-        'flex flex-col bg-transparent p-8 min-h-72',
+        'flex h-full flex-col bg-transparent p-8',
         className
       )}
     >
-      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <h3 className="mb-4 shrink-0 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
         {title}
       </h3>
 
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center overflow-y-auto">
         {status === 'loading' && <Spinner />}
         {status === 'error' && <ErrorState message={error ?? 'Something went wrong'} />}
         {status === 'idle' && <EmptyState />}
