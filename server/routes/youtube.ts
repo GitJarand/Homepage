@@ -78,7 +78,20 @@ youtube.get('/resolve', async (c) => {
   }
 })
 
-// Get the latest video for a channel ID
+// Returns true if the video is a YouTube Short (redirect stays on /shorts/)
+async function isShort(videoId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      redirect: 'follow',
+    })
+    return res.url.includes('/shorts/')
+  } catch {
+    return false
+  }
+}
+
+// Get the latest full video (no Shorts) for a channel ID
 youtube.get('/latest', async (c) => {
   const channelId = c.req.query('channelId')?.trim()
   if (!channelId) return c.json({ error: 'channelId required' }, 400)
@@ -91,28 +104,32 @@ youtube.get('/latest', async (c) => {
     if (!res.ok) return c.json({ error: `YouTube returned ${res.status}` }, 502)
     const xml = await res.text()
 
-    // Grab the first <entry> block only
-    const entryMatch = xml.match(/<entry>([\s\S]*?)<\/entry>/)
-    if (!entryMatch) return c.json({ error: 'No videos found' }, 404)
-    const entry = entryMatch[1]
+    const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(m => m[1])
+    if (!entries.length) return c.json({ error: 'No videos found' }, 404)
 
-    const videoId = extractFirst(entry, 'yt:videoId')
-    if (!videoId) return c.json({ error: 'No video ID found' }, 404)
-
-    const title = extractFirst(entry, 'media:title')
-      ?? extractFirst(entry, 'title')
-      ?? 'Untitled'
-    const publishedAt = extractFirst(entry, 'published') ?? null
     const channelName = extractFirst(xml, 'name') ?? channelId
 
-    return c.json({
-      videoId,
-      title,
-      publishedAt,
-      thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-      channelName,
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-    })
+    for (const entry of entries) {
+      const videoId = extractFirst(entry, 'yt:videoId')
+      if (!videoId) continue
+      if (await isShort(videoId)) continue
+
+      const title = extractFirst(entry, 'media:title')
+        ?? extractFirst(entry, 'title')
+        ?? 'Untitled'
+      const publishedAt = extractFirst(entry, 'published') ?? null
+
+      return c.json({
+        videoId,
+        title,
+        publishedAt,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+        channelName,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+      })
+    }
+
+    return c.json({ error: 'No full videos found in recent uploads' }, 404)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return c.json({ error: msg }, 502)
