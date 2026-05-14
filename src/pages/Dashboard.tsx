@@ -392,7 +392,7 @@ export default function Dashboard() {
                     <SortableCard
                       key={widget.id}
                       widget={widget}
-                      bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
+                      bgColor={undefined}
                       colSpan={colSpan}
                       rowSpan={rowSpan}
                       onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}

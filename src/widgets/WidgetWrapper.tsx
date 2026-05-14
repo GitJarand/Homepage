@@ -3,23 +3,20 @@ import { cn } from '@/lib/utils'
 
 interface WidgetWrapperProps {
   title: string
+  logo?: React.ReactNode
   status: WidgetStatus
   error?: string | null
   children: React.ReactNode
   className?: string
 }
 
-export function WidgetWrapper({ title, status, error, children, className }: WidgetWrapperProps) {
+export function WidgetWrapper({ title, logo, status, error, children, className }: WidgetWrapperProps) {
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col bg-transparent p-8',
-        className
-      )}
-    >
-      <h3 className="mb-4 shrink-0 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-        {title}
-      </h3>
+    <div className={cn('flex h-full flex-col bg-transparent p-8', className)}>
+      <div className="mb-4 flex shrink-0 flex-col items-center gap-1.5 border-b border-[var(--color-border)] pb-4">
+        {logo && <div className="text-3xl leading-none">{logo}</div>}
+        <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">{title}</h3>
+      </div>
 
       <div className="flex flex-1 items-center justify-center overflow-y-auto">
         {status === 'loading' && <Spinner />}

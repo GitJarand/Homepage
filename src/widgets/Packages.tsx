@@ -255,9 +255,10 @@ export function Packages() {
 
   return (
     <div className="flex h-full flex-col bg-transparent p-8">
-      <h3 className="mb-4 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-        Packages
-      </h3>
+      <div className="mb-4 flex shrink-0 flex-col items-center gap-1.5 border-b border-[var(--color-border)] pb-4">
+        <div className="text-3xl leading-none">📦</div>
+        <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">Packages</h3>
+      </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         {entries.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">

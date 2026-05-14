@@ -281,6 +281,7 @@ export function PersonalCalendar() {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
         <div className="flex items-center gap-1">
+          <span className="mr-1 text-lg leading-none">📅</span>
           <button
             onClick={handlePrev}
             className="flex h-6 w-6 items-center justify-center rounded text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
