@@ -6,6 +6,7 @@ import { WorkCalendar } from './WorkCalendar'
 import { Notes } from './Notes'
 import { Visual } from './Visual'
 import { Packages } from './Packages'
+import { YouTube } from './YouTube'
 import { Placeholder } from './Placeholder'
 
 export const widgets: WidgetDefinition[] = [
@@ -45,11 +46,11 @@ export const widgets: WidgetDefinition[] = [
     color: 'rgba(255, 59, 48, 0.12)',        colorDark: 'rgba(255, 59, 48, 0.20)',
   },
   {
-    id: 'placeholder-6',
-    title: 'Slot 6',
-    description: 'Available',
-    component: () => <Placeholder title="Slot 6" />,
-    color: 'rgba(90, 200, 250, 0.13)',       colorDark: 'rgba(90, 200, 250, 0.19)',
+    id: 'youtube',
+    title: 'YouTube',
+    description: 'Latest videos from your channels',
+    component: YouTube,
+    color: 'rgba(255, 59, 48, 0.08)',        colorDark: 'rgba(255, 59, 48, 0.16)',
   },
   {
     id: 'placeholder-7',
