@@ -27,7 +27,7 @@ export function Visual() {
   const { data, status, error } = useVisualData()
 
   return (
-    <WidgetWrapper title="Visual" status={status} error={error}>
+    <WidgetWrapper title="Visual" logo="🎨" status={status} error={error}>
       {data && (
         <img src={data.url} alt={data.alt} className="w-full rounded object-cover" />
       )}

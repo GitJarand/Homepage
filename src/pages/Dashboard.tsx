@@ -44,11 +44,43 @@ const SIZES_KEY = 'homepage:widget-sizes'
 const COLS_KEY  = 'homepage:col-widths'
 
 const NUM_COLS = 6
+const NUM_ROWS = 4
 const GAP = 16 // gap-4
 
 type ColSpan = 1 | 2 | 3 | 4 | 5 | 6
-type RowSpan = 1 | 2 | 3
+type RowSpan = 1 | 2 | 3 | 4
 interface WidgetSize { colSpan: ColSpan; rowSpan: RowSpan }
+
+// ─── Layout presets ───────────────────────────────────────────────────────────
+
+type Block = readonly [col: number, row: number, colSpan: number, rowSpan: number]
+
+interface LayoutPreset {
+  id: string
+  colWidths: number[]
+  sizes: Record<string, WidgetSize>
+  order?: string[]
+  blocks: Block[]
+}
+
+// Main layout: 6 smalls top, NRK+VG(1×3) left, YouTube(2×2) center, Reddit+Tech(1×3) right
+const MAIN_LAYOUT: LayoutPreset = {
+  id: 'main',
+  colWidths: Array(NUM_COLS).fill(1),
+  sizes: { youtube: { colSpan: 2 as ColSpan, rowSpan: 2 as RowSpan } },
+  order: [
+    'personal-calendar', 'work-calendar', 'notes', 'visual', 'packages', 'placeholder-6',
+    'news-nrk', 'news-vg', 'youtube', 'rss-feed-1', 'rss-feed-2',
+    'placeholder-7', 'placeholder-8',
+  ],
+  blocks: [
+    [0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1],[5,0,1,1],
+    [0,1,1,3],[1,1,1,3],
+    [2,1,2,2],
+    [4,1,1,3],[5,1,1,3],
+    [2,3,1,1],[3,3,1,1],
+  ],
+}
 
 function loadSizes(): Record<string, WidgetSize> {
   try { return JSON.parse(localStorage.getItem(SIZES_KEY) ?? '{}') } catch { return {} }
@@ -83,6 +115,69 @@ function loadColWidths(): number[] {
 }
 function saveColWidths(widths: number[]) {
   localStorage.setItem(COLS_KEY, JSON.stringify(widths))
+}
+
+// ─── Layout preview icon ─────────────────────────────────────────────────────
+
+function computeLayoutBlocks(ordered: OrderedWidget[], sizes: Record<string, WidgetSize>): Block[] {
+  const occupied: boolean[][] = []
+  const blocks: Block[] = []
+
+  function isFree(c: number, r: number, cs: number, rs: number) {
+    for (let dr = 0; dr < rs; dr++)
+      for (let dc = 0; dc < cs; dc++)
+        if (occupied[r + dr]?.[c + dc]) return false
+    return c + cs <= NUM_COLS
+  }
+
+  function fill(c: number, r: number, cs: number, rs: number) {
+    for (let dr = 0; dr < rs; dr++) {
+      if (!occupied[r + dr]) occupied[r + dr] = []
+      for (let dc = 0; dc < cs; dc++) occupied[r + dr][c + dc] = true
+    }
+  }
+
+  for (const w of ordered) {
+    const s = sizes[w.id]
+    const cs = (s?.colSpan ?? w.colSpan ?? 1) as number
+    const rs = (s?.rowSpan ?? w.rowSpan ?? 1) as number
+    outer: for (let r = 0; ; r++) {
+      for (let c = 0; c <= NUM_COLS - cs; c++) {
+        if (isFree(c, r, cs, rs)) { fill(c, r, cs, rs); blocks.push([c, r, cs, rs]); break outer }
+      }
+    }
+  }
+  return blocks
+}
+
+function clampSizesToGrid(
+  ordered: OrderedWidget[],
+  sizes: Record<string, WidgetSize>
+): Record<string, WidgetSize> {
+  const blocks = computeLayoutBlocks(ordered, sizes)
+  let next = sizes
+  ordered.forEach((w, i) => {
+    const block = blocks[i]
+    if (!block) return
+    const [, startRow, cs, rs] = block
+    if (startRow + rs > NUM_ROWS) {
+      const clampedRowSpan = Math.max(1, NUM_ROWS - startRow) as RowSpan
+      next = { ...next, [w.id]: { colSpan: cs as ColSpan, rowSpan: clampedRowSpan } }
+    }
+  })
+  return next
+}
+
+function LayoutPreviewIcon({ blocks }: { blocks: readonly Block[] }) {
+  const maxRow = blocks.reduce((m, [, r, , rs]) => Math.max(m, r + rs), 0)
+  const h = maxRow * 6 - 1
+  return (
+    <svg width="35" height={h} viewBox={`0 0 35 ${h}`} fill="currentColor">
+      {blocks.map(([col, row, cs, rs], i) => (
+        <rect key={i} x={col * 6} y={row * 6} width={cs * 6 - 1} height={rs * 6 - 1} rx="1.5" />
+      ))}
+    </svg>
+  )
 }
 
 // ─── Column resize handle ────────────────────────────────────────────────────
@@ -292,30 +387,29 @@ export default function Dashboard() {
     saveColWidths(widths)
   }, [])
 
-  function handleReset() {
-    const defaultWidths = Array(NUM_COLS).fill(1)
-    const defaultOrder = widgets
-    const defaultSizes: Record<string, WidgetSize> = {}
-    setColWidths(defaultWidths)
-    setOrdered(defaultOrder)
-    setSizes(defaultSizes)
-    saveColWidths(defaultWidths)
-    saveOrder(defaultOrder)
-    saveSizes(defaultSizes)
+  function applyPreset(preset: LayoutPreset) {
+    const newOrder = preset.order
+      ? preset.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+      : widgets
+    setColWidths(preset.colWidths)
+    setOrdered(newOrder)
+    setSizes(preset.sizes)
+    saveColWidths(preset.colWidths)
+    saveOrder(newOrder)
+    saveSizes(preset.sizes)
   }
 
   const handleResize = useCallback((id: string, dCol: number, dRow: number) => {
-    setSizes(prev => {
-      const widget = widgets.find(w => w.id === id)
-      const cur = prev[id] ?? { colSpan: widget?.colSpan ?? 1, rowSpan: widget?.rowSpan ?? 1 }
-      const colSpan = Math.max(1, Math.min(NUM_COLS, cur.colSpan + dCol)) as ColSpan
-      const rowSpan = Math.max(1, Math.min(3, cur.rowSpan + dRow)) as RowSpan
-      if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return prev
-      const next = { ...prev, [id]: { colSpan, rowSpan } }
-      saveSizes(next)
-      return next
-    })
-  }, [])
+    const widget  = widgets.find(w => w.id === id)
+    const cur     = sizes[id] ?? { colSpan: widget?.colSpan ?? 1, rowSpan: widget?.rowSpan ?? 1 }
+    const colSpan = Math.max(1, Math.min(NUM_COLS, cur.colSpan + dCol)) as ColSpan
+    const rowSpan = Math.max(1, Math.min(NUM_ROWS, cur.rowSpan + dRow)) as RowSpan
+    if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return
+    const tentative = { ...sizes, [id]: { colSpan, rowSpan } }
+    const clamped   = clampSizesToGrid(ordered, tentative)
+    setSizes(clamped)
+    saveSizes(clamped)
+  }, [ordered, sizes])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -325,29 +419,57 @@ export default function Dashboard() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    setOrdered((prev) => {
-      const from = prev.findIndex((w) => w.id === active.id)
-      const to = prev.findIndex((w) => w.id === over.id)
-      const next = arrayMove(prev, from, to)
-      saveOrder(next)
-      return next
-    })
+    const from     = ordered.findIndex((w) => w.id === active.id)
+    const to       = ordered.findIndex((w) => w.id === over.id)
+    const newOrder = arrayMove(ordered, from, to)
+    const clamped  = clampSizesToGrid(newOrder, sizes)
+    setOrdered(newOrder)
+    saveOrder(newOrder)
+    if (clamped !== sizes) {
+      setSizes(clamped)
+      saveSizes(clamped)
+    }
   }
 
   return (
     <div className="min-h-screen">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 backdrop-blur-xl" style={{ backgroundColor: 'var(--card-bg)' }}>
-        <div className="relative flex items-center justify-center px-8 py-5">
-          <span className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">This is today</span>
-          <div className="absolute right-8 flex items-center gap-2">
+      <header className="sticky top-0 z-10 backdrop-blur-xl" style={{ backgroundColor: 'var(--header-bg)' }}>
+        <div className="relative flex items-center justify-center px-8 py-[15px]">
+          {/* Current layout icon — left side */}
+          <div className="absolute left-8 flex items-center">
             <button
-              onClick={handleReset}
-              className="rounded-full px-3 py-1 text-xs text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors"
-              title="Reset layout to defaults"
+              onClick={() => {
+                setColWidths(loadColWidths())
+                setOrdered(loadOrder(widgets))
+                setSizes(loadSizes())
+              }}
+              className="rounded p-0.5 text-[var(--color-foreground)] opacity-[0.15] hover:opacity-40 transition-opacity"
+              title="Current layout"
             >
-              Reset layout
+              <LayoutPreviewIcon blocks={computeLayoutBlocks(ordered, sizes)} />
             </button>
+          </div>
+          <span
+            className="text-[28px] font-semibold tracking-tight text-[var(--color-foreground)] leading-none"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            {(() => {
+              const h = new Date().getHours()
+              const period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+              return `Good ${period}, Jarand`
+            })()}
+          </span>
+          <div className="absolute right-8 flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => applyPreset(MAIN_LAYOUT)}
+                className="rounded p-0.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+                title="Main layout"
+              >
+                <LayoutPreviewIcon blocks={MAIN_LAYOUT.blocks} />
+              </button>
+            </div>
             <button
               onClick={toggle}
               className="rounded-full p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] transition-colors"
@@ -378,10 +500,11 @@ export default function Dashboard() {
               {/* Card grid */}
               <div
                 ref={gridRef}
-                className="grid gap-4 [grid-auto-flow:dense]"
+                className="grid gap-4 [grid-auto-flow:dense] overflow-hidden"
                 style={{
                   gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
-                  gridAutoRows: '260px',
+                  gridTemplateRows: 'repeat(4, 280px)',
+                  maxHeight: `calc(4 * 280px + 3 * ${GAP}px)`,
                 }}
               >
                 {ordered.map((widget) => {
@@ -392,7 +515,7 @@ export default function Dashboard() {
                     <SortableCard
                       key={widget.id}
                       widget={widget}
-                      bgColor={resolvedTheme === 'dark' ? (widget.colorDark ?? widget.color) : widget.color}
+                      bgColor={undefined}
                       colSpan={colSpan}
                       rowSpan={rowSpan}
                       onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}

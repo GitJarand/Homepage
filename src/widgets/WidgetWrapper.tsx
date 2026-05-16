@@ -3,28 +3,24 @@ import { cn } from '@/lib/utils'
 
 interface WidgetWrapperProps {
   title: string
+  logo?: React.ReactNode
   status: WidgetStatus
   error?: string | null
   children: React.ReactNode
   className?: string
 }
 
-export function WidgetWrapper({ title, status, error, children, className }: WidgetWrapperProps) {
+export function WidgetWrapper({ title, logo, status, error, children, className }: WidgetWrapperProps) {
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col bg-transparent p-8',
-        className
-      )}
-    >
-      <h3 className="mb-4 shrink-0 border-b border-[var(--color-border)] pb-4 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-        {title}
-      </h3>
+    <div className={cn('flex h-full flex-col bg-transparent px-4 pb-4 pt-3', className)}>
+      <div className="mb-3 flex shrink-0 flex-col items-center pb-3">
+        {logo && <div className="text-3xl leading-none">{logo}</div>}
+      </div>
 
       <div className="flex flex-1 items-center justify-center overflow-y-auto">
         {status === 'loading' && <Spinner />}
         {status === 'error' && <ErrorState message={error ?? 'Something went wrong'} />}
-        {status === 'idle' && <EmptyState />}
+        {status === 'idle' && <EmptyState title={title} />}
         {status === 'success' && children}
       </div>
     </div>
@@ -43,8 +39,11 @@ function ErrorState({ message }: { message: string }) {
   )
 }
 
-function EmptyState() {
+function EmptyState({ title }: { title?: string }) {
   return (
-    <p className="text-sm text-[var(--color-muted-foreground)]">No data yet</p>
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-2xl leading-none">🚧</span>
+      {title && <p className="text-xs text-[var(--color-muted-foreground)]">{title}</p>}
+    </div>
   )
 }

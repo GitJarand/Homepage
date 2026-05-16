@@ -29,7 +29,7 @@ export function WorkCalendar() {
   const { data, status, error } = useWorkCalendarData()
 
   return (
-    <WidgetWrapper title="Work Calendar" status={status} error={error}>
+    <WidgetWrapper title="Work Calendar" logo="💼" status={status} error={error}>
       {data?.map((event) => (
         <div key={event.id}>{event.title}</div>
       ))}

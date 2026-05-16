@@ -9,6 +9,13 @@ interface NewsItem {
   sourceLabel?: string
 }
 
+const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value: string } | { type: 'img+emoji'; url: string; emoji: string }> = {
+  vg:               { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=vg.no&sz=64' },
+  nrk:              { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
+  'reddit-fpl-lfc': { type: 'img+emoji', url: 'https://www.google.com/s2/favicons?domain=reddit.com&sz=64', emoji: '⚽' },
+  'tech-gaming':    { type: 'text',      value: '💻🎮' },
+}
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -91,16 +98,22 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
 
   const enabledCount = availableSources.filter(s => !hiddenSources.has(s)).length
 
+  const logo = LOGOS[source]
+
   return (
-    <div className="relative flex h-full flex-col p-8">
-      <div className="mb-4 flex shrink-0 items-center justify-between border-b border-[var(--color-border)] pb-4">
-        <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-          {label ?? source.toUpperCase()}
-        </h3>
+    <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
+      <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
+        {logo && (
+          logo.type === 'img'
+            ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
+            : logo.type === 'img+emoji'
+              ? <div className="flex items-center gap-1"><img src={logo.url} alt="" className="h-8 w-8 object-contain" /><span className="text-xl leading-none">{logo.emoji}</span></div>
+              : <span className="text-3xl leading-none">{logo.value}</span>
+        )}
         <button
           onClick={() => setRefreshKey(k => k + 1)}
           disabled={status === 'loading'}
-          className="ml-auto rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
+          className="absolute left-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
           title="Refresh"
         >
           <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -109,7 +122,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
           </svg>
         </button>
         {availableSources.length > 1 && (
-          <div ref={filterRef} className="relative">
+          <div ref={filterRef} className="absolute right-0 top-0">
             <button
               onClick={() => setShowFilter(v => !v)}
               className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"

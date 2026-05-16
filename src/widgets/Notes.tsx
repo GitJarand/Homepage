@@ -28,7 +28,7 @@ export function Notes() {
   const { data, status, error } = useNotesData()
 
   return (
-    <WidgetWrapper title="Notes" status={status} error={error}>
+    <WidgetWrapper title="Notes" logo="📝" status={status} error={error}>
       {data?.map((note) => (
         <div key={note.id}>{note.title}</div>
       ))}
