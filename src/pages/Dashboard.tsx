@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -300,17 +300,14 @@ function CardResizeHandle({ onResize }: { onResize: (dCol: number, dRow: number)
 
 function SortableCard({
   widget,
-  bgColor,
-  colSpan,
-  rowSpan,
+  block,
   onResize,
 }: {
   widget: OrderedWidget
-  bgColor: string | undefined
-  colSpan: ColSpan
-  rowSpan: RowSpan
+  block: Block
   onResize: (dCol: number, dRow: number) => void
 }) {
+  const [col, row, cs, rs] = block
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
@@ -322,9 +319,11 @@ function SortableCard({
       data-card
       ref={setNodeRef}
       style={{
+        gridColumn: `${col + 1} / span ${cs}`,
+        gridRow: `${row + 1} / span ${rs}`,
         transform: CSS.Transform.toString(transform),
         transition,
-        backgroundColor: bgColor ?? 'var(--card-bg)',
+        backgroundColor: 'var(--card-bg)',
         borderRadius: 'var(--radius)',
         boxShadow: 'var(--card-shadow)',
         border: '1px solid var(--card-border)',
@@ -332,13 +331,6 @@ function SortableCard({
         overflow: 'hidden',
       }}
       className={cn(
-        colSpan === 2 && 'col-span-2',
-        colSpan === 3 && 'col-span-3',
-        colSpan === 4 && 'col-span-4',
-        colSpan === 5 && 'col-span-5',
-        colSpan === 6 && 'col-span-6',
-        rowSpan === 2 && 'row-span-2',
-        rowSpan === 3 && 'row-span-3',
         isDragging ? 'opacity-40' : 'opacity-100',
         'group transition-opacity outline-none',
       )}
@@ -360,6 +352,9 @@ export default function Dashboard() {
   const [colWidths, setColWidths] = useState<number[]>(loadColWidths)
   const gridRef = useRef<HTMLDivElement>(null)
   const [gridWidth, setGridWidth] = useState(0)
+
+  // Explicit grid placement — our algorithm IS the layout, clamp is always accurate
+  const blocks = useMemo(() => computeLayoutBlocks(ordered, sizes), [ordered, sizes])
 
   useEffect(() => {
     if (!gridRef.current) return
@@ -447,7 +442,7 @@ export default function Dashboard() {
               className="rounded p-0.5 text-[var(--color-foreground)] opacity-[0.15] hover:opacity-40 transition-opacity"
               title="Current layout"
             >
-              <LayoutPreviewIcon blocks={computeLayoutBlocks(ordered, sizes)} />
+              <LayoutPreviewIcon blocks={blocks} />
             </button>
           </div>
           <span
@@ -497,31 +492,24 @@ export default function Dashboard() {
                   onChange={handleColWidthChange}
                 />
               ))}
-              {/* Card grid */}
+              {/* Card grid — explicit placement, no auto-flow */}
               <div
                 ref={gridRef}
-                className="grid gap-4 [grid-auto-flow:dense] overflow-hidden"
+                className="grid gap-4 overflow-hidden"
                 style={{
                   gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
                   gridTemplateRows: 'repeat(4, 280px)',
                   maxHeight: `calc(4 * 280px + 3 * ${GAP}px)`,
                 }}
               >
-                {ordered.map((widget) => {
-                  const size = sizes[widget.id]
-                  const colSpan = (size?.colSpan ?? widget.colSpan ?? 1) as ColSpan
-                  const rowSpan = (size?.rowSpan ?? widget.rowSpan ?? 1) as RowSpan
-                  return (
-                    <SortableCard
-                      key={widget.id}
-                      widget={widget}
-                      bgColor={undefined}
-                      colSpan={colSpan}
-                      rowSpan={rowSpan}
-                      onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
-                    />
-                  )
-                })}
+                {ordered.map((widget, i) => (
+                  <SortableCard
+                    key={widget.id}
+                    widget={widget}
+                    block={blocks[i] ?? [0, 0, 1, 1]}
+                    onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
+                  />
+                ))}
               </div>
             </div>
           </SortableContext>
