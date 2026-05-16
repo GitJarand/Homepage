@@ -9,6 +9,7 @@ import { Packages } from './Packages'
 import { YouTube } from './YouTube'
 import { Placeholder } from './Placeholder'
 import { News } from './News'
+import { Clock } from './Clock'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -48,11 +49,11 @@ export const widgets: WidgetDefinition[] = [
     color: 'rgba(255, 59, 48, 0.12)',        colorDark: 'rgba(255, 59, 48, 0.20)',
   },
   {
-    id: 'placeholder-6',
-    title: 'Slot 6',
-    description: 'Available',
-    component: () => <Placeholder title="Slot 6" />,
-    color: 'rgba(255, 149, 0, 0.10)',        colorDark: 'rgba(255, 149, 0, 0.18)',
+    id: 'clock',
+    title: 'Clock',
+    description: 'Current time and date',
+    component: Clock,
+    color: 'rgba(0, 0, 0, 0)',               colorDark: 'rgba(0, 0, 0, 0)',
   },
 
   // ── Row 2+: tall section ──────────────────────────────────────────────────
