@@ -111,7 +111,13 @@ function parseItems(xml: string, limit: number, sourceLabel?: string): NewsItem[
 
 const feeds: Record<string, string | string[]> = {
   vg: 'https://www.vg.no/rss/feed/',
-  nrk: 'https://www.nrk.no/toppsaker.rss',
+  nrk: [
+    'https://www.nrk.no/toppsaker.rss',
+    'https://www.nrk.no/sport/toppsaker.rss',
+    'https://www.nrk.no/kultur/toppsaker.rss',
+    'https://www.nrk.no/urix/toppsaker.rss',
+    'https://www.nrk.no/norge/toppsaker.rss',
+  ],
   'reddit-fpl-lfc': [
     'https://old.reddit.com/r/FantasyPL/.rss',
     'https://old.reddit.com/r/LiverpoolFC/.rss',
@@ -164,20 +170,41 @@ const feeds: Record<string, string | string[]> = {
 
 news.get('/feed', async (c) => {
   const source = c.req.query('source') ?? 'vg'
-  const limit = Math.min(parseInt(c.req.query('limit') ?? '15', 10), 30)
+  const limit = Math.min(parseInt(c.req.query('limit') ?? '15', 10), 100)
+  const sort = c.req.query('sort') ?? 'hot'
 
   const feedUrl = feeds[source]
   if (!feedUrl) return c.json({ error: 'Unknown source' }, 400)
 
   // Multi-feed: fetch all in parallel, merge and sort by date
   if (Array.isArray(feedUrl)) {
+    // Optional subreddit filter: only fetch the requested sub-feeds
+    const subredditsParam = c.req.query('subreddits')
+    let feedsToUse = feedUrl
+    if (subredditsParam) {
+      const subs = subredditsParam.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+      if (subs.length > 0) {
+        const filtered = feedUrl.filter(url => {
+          const m = url.match(/reddit\.com\/r\/([^/+.]+)/i)
+          return m ? subs.includes(m[1].toLowerCase()) : true
+        })
+        if (filtered.length > 0) feedsToUse = filtered
+      }
+    }
+
+    // Each feed contributes equally: cap per-feed at ceil(limit / feeds) so every source shows up
+    const perFeed = Math.max(5, Math.ceil(limit / feedsToUse.length))
     const results = await Promise.allSettled(
-      feedUrl.map(async url => {
+      feedsToUse.map(async url => {
         const ctrl = new AbortController()
         const timer = setTimeout(() => ctrl.abort(), 5000)
         try {
-          const isRedditUrl = url.includes('reddit.com')
-          const res = await fetch(url, {
+          // Apply sort to Reddit URLs: insert /new/ before .rss
+          const resolvedUrl = (sort === 'new' && url.includes('reddit.com'))
+            ? url.replace('/.rss', '/new/.rss')
+            : url
+          const isRedditUrl = resolvedUrl.includes('reddit.com')
+          const res = await fetch(resolvedUrl, {
             headers: {
               'User-Agent': isRedditUrl
                 ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -189,36 +216,49 @@ news.get('/feed', async (c) => {
             signal: ctrl.signal,
           })
           if (!res.ok) return [] as NewsItem[]
-          return parseItems(await res.text(), limit, labelFromUrl(url))
+          return parseItems(await res.text(), perFeed, labelFromUrl(url))
         } catch { return [] as NewsItem[] }
         finally { clearTimeout(timer) }
       })
     )
     const all = results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
-    all.sort((a, b) => {
+    // Deduplicate by URL
+    const seen = new Set<string>()
+    const deduped = all.filter(item => {
+      if (!item.url || seen.has(item.url)) return false
+      seen.add(item.url)
+      return true
+    })
+    deduped.sort((a, b) => {
       const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
       const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
       return tb - ta
     })
-    return c.json({ source, items: all.slice(0, limit) })
+    return c.json({ source, items: deduped.slice(0, limit) })
   }
 
-  // Single-feed: existing retry logic
-  const isReddit = feedUrl.includes('reddit.com')
+  // Single-feed: retry with backoff
+  const isReddit = (feedUrl as string).includes('reddit.com')
   const headers = {
-    'User-Agent': isReddit
-      ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      : 'Mozilla/5.0',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'application/rss+xml, application/xml, text/xml, */*',
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'identity',
+    'Cache-Control': 'no-cache',
     ...(isReddit && { 'Cookie': '' }),
   }
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt))
-      const res = await fetch(feedUrl, { headers })
+      if (attempt > 0) await new Promise(r => setTimeout(r, 800 * attempt))
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8000)
+      let res: Response
+      try {
+        res = await fetch(feedUrl as string, { headers, signal: ctrl.signal })
+      } finally {
+        clearTimeout(timer)
+      }
       if (!res.ok) return c.json({ error: `Feed returned ${res.status}` }, 502)
       const xml = await res.text()
       return c.json({ source, items: parseItems(xml, limit) })
