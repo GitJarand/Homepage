@@ -4,15 +4,8 @@ interface MediaItem {
   type: 'movie' | 'show'
   title: string
   year: number | null
-  tmdbId: number | null
-  posterUrl: string | null
   traktSlug: string | null
   listedAt: string
-}
-
-const TYPE_ICON: Record<string, string> = {
-  movie: '🎬',
-  show:  '📺',
 }
 
 export function Trakt() {
@@ -56,14 +49,11 @@ export function Trakt() {
       </div>
 
       {status === 'loading' && (
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="h-16 w-11 flex-shrink-0 animate-pulse rounded bg-[var(--color-border)]" />
-              <div className="flex flex-1 flex-col gap-1.5 pt-1">
-                <div className="h-2.5 w-full animate-pulse rounded bg-[var(--color-border)]" />
-                <div className="h-2.5 w-2/3 animate-pulse rounded bg-[var(--color-border)]" />
-              </div>
+        <div className="flex flex-col gap-2.5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <div className="h-3 w-full animate-pulse rounded bg-[var(--color-border)]" />
+              <div className="h-2.5 w-1/3 animate-pulse rounded bg-[var(--color-border)]" />
             </div>
           ))}
         </div>
@@ -89,30 +79,15 @@ export function Trakt() {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="flex gap-3 py-2.5 first:pt-0 transition-opacity hover:opacity-75"
+                className="flex items-center justify-between gap-2 py-2 first:pt-0 transition-opacity hover:opacity-75"
               >
-                {/* Poster or type-icon placeholder */}
-                {item.posterUrl ? (
-                  <img
-                    src={item.posterUrl}
-                    alt=""
-                    className="h-16 w-11 flex-shrink-0 rounded object-cover"
-                  />
-                ) : (
-                  <div className="flex h-16 w-11 flex-shrink-0 items-center justify-center rounded bg-[var(--color-border)] text-xl">
-                    {TYPE_ICON[item.type] ?? '🎬'}
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[var(--color-foreground)]">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-[11px] text-[var(--color-muted-foreground)]">
-                    {item.year ?? '—'}
-                    <span className="opacity-50"> · {item.type === 'show' ? 'Series' : 'Movie'}</span>
-                  </p>
-                </div>
+                <p className="line-clamp-1 text-[13px] font-medium text-[var(--color-foreground)]">
+                  {item.title}
+                </p>
+                <p className="shrink-0 text-[11px] text-[var(--color-muted-foreground)]">
+                  {item.year ?? '—'}
+                  <span className="ml-1 opacity-50">{item.type === 'show' ? '📺' : '🎬'}</span>
+                </p>
               </a>
             )
           })}
