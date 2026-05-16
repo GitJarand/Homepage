@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+
+const PAGE = 12
 
 interface NewsItem {
   title: string
@@ -9,9 +11,20 @@ interface NewsItem {
   sourceLabel?: string
 }
 
-const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value: string } | { type: 'img+emoji'; url: string; emoji: string }> = {
-  vg:               { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=vg.no&sz=64' },
-  nrk:              { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
+const ListIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="9" y1="6" x2="20" y2="6"/>
+    <line x1="9" y1="12" x2="20" y2="12"/>
+    <line x1="9" y1="18" x2="20" y2="18"/>
+    <circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+)
+
+const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value: string } | { type: 'img+emoji'; url: string; emoji: string } | { type: 'icon' }> = {
+  vg:               { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=vg.no&sz=64' },
+  nrk:              { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
   'reddit-fpl-lfc': { type: 'img+emoji', url: 'https://www.google.com/s2/favicons?domain=reddit.com&sz=64', emoji: '⚽' },
   'tech-gaming':    { type: 'text',      value: '💻🎮' },
 }
@@ -37,18 +50,33 @@ function saveHidden(source: string, hidden: Set<string>) {
   localStorage.setItem(`homepage:news-hidden:${source}`, JSON.stringify([...hidden]))
 }
 
-export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = [] }: { source?: string; label?: string; fetchLimit?: number; defaultHidden?: string[] }) {
+export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = [], allSources }: { source?: string; label?: string; fetchLimit?: number; defaultHidden?: string[]; allSources?: string[] }) {
   const [items, setItems] = useState<NewsItem[]>([])
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [hiddenSources, setHiddenSources] = useState<Set<string>>(() => loadHidden(source, defaultHidden))
   const [showFilter, setShowFilter] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(PAGE)
+  const [sort, setSort] = useState<'hot' | 'new'>('hot')
   const filterRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // When allSources is provided, derive which sub-feeds to request from the server.
+  // Returns null when all are shown (no filtering needed) or when allSources isn't set.
+  const enabledSubreddits = useMemo(() => {
+    if (!allSources) return null
+    const enabled = allSources.filter(s => !hiddenSources.has(s))
+    if (enabled.length === 0 || enabled.length === allSources.length) return null
+    return enabled.map(s => s.replace(/^r\//, '')).join(',')
+  }, [allSources, hiddenSources])
 
   useEffect(() => {
     setStatus('loading')
-    fetch(`/api/news/feed?source=${encodeURIComponent(source)}&limit=${fetchLimit}`)
+    const qs = new URLSearchParams({ source, limit: String(fetchLimit) })
+    if (enabledSubreddits) qs.set('subreddits', enabledSubreddits)
+    if (allSources && sort !== 'hot') qs.set('sort', sort)
+    fetch(`/api/news/feed?${qs}`)
       .then(async r => {
         const json = await r.json() as { items?: NewsItem[]; error?: string }
         if (json.error) { setError(json.error); setStatus('error'); return }
@@ -56,7 +84,10 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
         setStatus('success')
       })
       .catch((err: Error) => { setError(err.message); setStatus('error') })
-  }, [source, fetchLimit, refreshKey])
+  }, [source, fetchLimit, refreshKey, enabledSubreddits, sort])
+
+  // Reset visible count only when switching to a completely different source widget
+  useEffect(() => { setVisibleCount(PAGE) }, [source])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -71,14 +102,31 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
   }, [showFilter])
 
   const availableSources = useMemo(
-    () => [...new Set(items.map(i => i.sourceLabel).filter(Boolean) as string[])].sort(),
-    [items]
+    () => allSources
+      ? [...allSources].sort()
+      : [...new Set(items.map(i => i.sourceLabel).filter(Boolean) as string[])].sort(),
+    [allSources, items]
   )
 
   const filteredItems = useMemo(
     () => items.filter(i => !i.sourceLabel || !hiddenSources.has(i.sourceLabel)),
     [items, hiddenSources]
   )
+
+  const visibleItems = filteredItems.slice(0, visibleCount)
+  const hasMore = visibleCount < filteredItems.length
+
+  // IntersectionObserver to load more on scroll
+  const loadMore = useCallback(() => setVisibleCount(n => n + PAGE), [])
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMore() },
+      { threshold: 0.1 }
+    )
+    obs.observe(sentinelRef.current)
+    return () => obs.disconnect()
+  }, [hasMore, visibleCount, loadMore])
 
   function toggleSource(src: string) {
     setHiddenSources(prev => {
@@ -108,7 +156,9 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
             ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
             : logo.type === 'img+emoji'
               ? <div className="flex items-center gap-1"><img src={logo.url} alt="" className="h-8 w-8 object-contain" /><span className="text-xl leading-none">{logo.emoji}</span></div>
-              : <span className="text-3xl leading-none">{logo.value}</span>
+              : logo.type === 'icon'
+                ? <span className="text-[var(--color-muted-foreground)]"><ListIcon /></span>
+                : <span className="text-3xl leading-none">{logo.value}</span>
         )}
         <button
           onClick={() => setRefreshKey(k => k + 1)}
@@ -121,23 +171,45 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
             <path d="M21 3v5h-5"/>
           </svg>
         </button>
-        {availableSources.length > 1 && (
-          <div ref={filterRef} className="absolute right-0 top-0">
+        {(allSources || availableSources.length > 1) && (
+          <div ref={filterRef} className="absolute right-0 top-0 flex items-center gap-0.5">
+            {allSources && (
+              <>
+                <button
+                  onClick={() => setSort('hot')}
+                  title="Hot"
+                  className={`rounded p-1 transition-colors ${sort === 'hot' ? 'text-orange-400' : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSort('new')}
+                  title="New"
+                  className={`rounded p-1 transition-colors ${sort === 'new' ? 'text-blue-400' : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </button>
+              </>
+            )}
+            {availableSources.length > 1 && (
             <button
               onClick={() => setShowFilter(v => !v)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+              className="flex items-center gap-1 rounded px-1.5 py-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
             >
-              Sources
-              {hiddenSources.size > 0 && (
-                <span className="rounded-full bg-[#007AFF] px-1.5 py-0.5 text-[9px] text-white">
-                  {enabledCount}/{availableSources.length}
-                </span>
-              )}
-              <span className="text-[9px] opacity-60">{showFilter ? '▲' : '▼'}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="18" r="2" fill="currentColor" stroke="none"/>
+              </svg>
             </button>
-
+            )}
             {showFilter && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] py-1 shadow-xl backdrop-blur-xl" style={{ backgroundColor: 'var(--card-bg)' }}>
                 <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5">
                   <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">Sources</span>
                   <div className="flex gap-2">
@@ -185,7 +257,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
 
       {status === 'success' && (
         <div className="flex flex-col divide-y divide-[var(--color-border)] overflow-y-auto">
-          {filteredItems.map((item, i) => (
+          {visibleItems.map((item, i) => (
             <a
               key={i}
               href={item.url}
@@ -215,6 +287,7 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
               </div>
             </a>
           ))}
+          {hasMore && <div ref={sentinelRef} className="h-4 shrink-0" />}
         </div>
       )}
     </div>
