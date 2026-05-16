@@ -9,11 +9,11 @@ interface NewsItem {
   sourceLabel?: string
 }
 
-const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value: string }> = {
-  vg:               { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=vg.no&sz=64' },
-  nrk:              { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
-  'reddit-fpl-lfc': { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=reddit.com&sz=64' },
-  'tech-gaming':    { type: 'text', value: '💻🎮' },
+const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value: string } | { type: 'img+emoji'; url: string; emoji: string }> = {
+  vg:               { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=vg.no&sz=64' },
+  nrk:              { type: 'img',       url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
+  'reddit-fpl-lfc': { type: 'img+emoji', url: 'https://www.google.com/s2/favicons?domain=reddit.com&sz=64', emoji: '⚽' },
+  'tech-gaming':    { type: 'text',      value: '💻🎮' },
 }
 
 function timeAgo(dateStr: string): string {
@@ -102,66 +102,66 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
 
   return (
     <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
-      <div className="relative mb-3 flex shrink-0 flex-col items-center border-b border-[var(--color-border)] pb-3">
+      <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         {logo && (
           logo.type === 'img'
             ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
-            : <span className="text-3xl leading-none">{logo.value}</span>
+            : logo.type === 'img+emoji'
+              ? <div className="flex items-center gap-1"><img src={logo.url} alt="" className="h-8 w-8 object-contain" /><span className="text-xl leading-none">{logo.emoji}</span></div>
+              : <span className="text-3xl leading-none">{logo.value}</span>
         )}
-        <div className="absolute left-0 top-0 flex items-center gap-1">
-          <button
-            onClick={() => setRefreshKey(k => k + 1)}
-            disabled={status === 'loading'}
-            className="rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
-            title="Refresh"
-          >
-            <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-              <path d="M21 3v5h-5"/>
-            </svg>
-          </button>
-          {availableSources.length > 1 && (
-            <div ref={filterRef} className="relative">
-              <button
-                onClick={() => setShowFilter(v => !v)}
-                className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
-              >
-                Sources
-                {hiddenSources.size > 0 && (
-                  <span className="rounded-full bg-[#007AFF] px-1.5 py-0.5 text-[9px] text-white">
-                    {enabledCount}/{availableSources.length}
-                  </span>
-                )}
-                <span className="text-[9px] opacity-60">{showFilter ? '▲' : '▼'}</span>
-              </button>
+        <button
+          onClick={() => setRefreshKey(k => k + 1)}
+          disabled={status === 'loading'}
+          className="absolute left-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
+          title="Refresh"
+        >
+          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+        </button>
+        {availableSources.length > 1 && (
+          <div ref={filterRef} className="absolute right-0 top-0">
+            <button
+              onClick={() => setShowFilter(v => !v)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            >
+              Sources
+              {hiddenSources.size > 0 && (
+                <span className="rounded-full bg-[#007AFF] px-1.5 py-0.5 text-[9px] text-white">
+                  {enabledCount}/{availableSources.length}
+                </span>
+              )}
+              <span className="text-[9px] opacity-60">{showFilter ? '▲' : '▼'}</span>
+            </button>
 
-              {showFilter && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-1 shadow-lg">
-                  <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">Sources</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => toggleAll(true)} className="text-[10px] text-[#007AFF] hover:underline">All</button>
-                      <button onClick={() => toggleAll(false)} className="text-[10px] text-[#007AFF] hover:underline">None</button>
-                    </div>
-                  </div>
-                  <div className="max-h-56 overflow-y-auto">
-                    {availableSources.map(src => (
-                      <label key={src} className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-muted)]">
-                        <input
-                          type="checkbox"
-                          checked={!hiddenSources.has(src)}
-                          onChange={() => toggleSource(src)}
-                          className="accent-[#007AFF]"
-                        />
-                        <span className="text-[12px] text-[var(--color-foreground)]">{src}</span>
-                      </label>
-                    ))}
+            {showFilter && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-1 shadow-lg">
+                <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5">
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">Sources</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => toggleAll(true)} className="text-[10px] text-[#007AFF] hover:underline">All</button>
+                    <button onClick={() => toggleAll(false)} className="text-[10px] text-[#007AFF] hover:underline">None</button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+                <div className="max-h-56 overflow-y-auto">
+                  {availableSources.map(src => (
+                    <label key={src} className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[var(--color-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={!hiddenSources.has(src)}
+                        onChange={() => toggleSource(src)}
+                        className="accent-[#007AFF]"
+                      />
+                      <span className="text-[12px] text-[var(--color-foreground)]">{src}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {status === 'loading' && (

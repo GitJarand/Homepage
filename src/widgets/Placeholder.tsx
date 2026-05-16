@@ -6,7 +6,7 @@ interface PlaceholderProps {
 
 export function Placeholder({ title }: PlaceholderProps) {
   return (
-    <WidgetWrapper title={title} status="idle">
+    <WidgetWrapper title={title} logo="🚧" status="idle">
       <span />
     </WidgetWrapper>
   )
