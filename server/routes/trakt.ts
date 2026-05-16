@@ -4,6 +4,7 @@ const trakt = new Hono()
 
 const CLIENT_ID  = process.env.TRAKT_CLIENT_ID ?? ''
 const TMDB_KEY   = process.env.TMDB_API_KEY ?? ''
+const OMDB_KEY   = process.env.OMDB_API_KEY ?? ''
 const TRAKT_USER = process.env.TRAKT_USER ?? 'giladg'
 const TRAKT_LIST = process.env.TRAKT_LIST ?? 'latest-releases'
 
@@ -26,7 +27,7 @@ interface MediaItem {
   listedAt: string
 }
 
-async function fetchPoster(tmdbId: number, type: 'movie' | 'show'): Promise<string | null> {
+async function fetchPosterTMDB(tmdbId: number, type: 'movie' | 'show'): Promise<string | null> {
   if (!TMDB_KEY || !tmdbId) return null
   try {
     const endpoint = type === 'show' ? 'tv' : 'movie'
@@ -36,12 +37,38 @@ async function fetchPoster(tmdbId: number, type: 'movie' | 'show'): Promise<stri
     )
     if (!res.ok) return null
     const data = await res.json() as { poster_path?: string }
-    return data.poster_path
-      ? `https://image.tmdb.org/t/p/w300${data.poster_path}`
-      : null
-  } catch {
-    return null
+    return data.poster_path ? `https://image.tmdb.org/t/p/w300${data.poster_path}` : null
+  } catch { return null }
+}
+
+async function fetchPosterOMDB(imdbId: string): Promise<string | null> {
+  if (!OMDB_KEY || !imdbId) return null
+  try {
+    const res = await fetch(
+      `https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_KEY}`,
+      { signal: AbortSignal.timeout(5000) }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { Poster?: string }
+    const url = data.Poster
+    return url && url !== 'N/A' ? url : null
+  } catch { return null }
+}
+
+async function fetchPoster(
+  tmdbId: number | null,
+  imdbId: string | null,
+  type: 'movie' | 'show'
+): Promise<string | null> {
+  // Try TMDB first, fall back to OMDb
+  if (tmdbId && TMDB_KEY) {
+    const url = await fetchPosterTMDB(tmdbId, type)
+    if (url) return url
   }
+  if (imdbId && OMDB_KEY) {
+    return fetchPosterOMDB(imdbId)
+  }
+  return null
 }
 
 trakt.get('/list', async (c) => {
@@ -66,17 +93,15 @@ trakt.get('/list', async (c) => {
     }
 
     const raw = await res.json() as TraktItem[]
-
-    // Keep only movies and shows
     const filtered = raw.filter(i => i.type === 'movie' || i.type === 'show')
 
-    // Fetch TMDB posters in parallel (graceful — failures just mean no poster)
     const items: MediaItem[] = await Promise.all(
       filtered.map(async (item) => {
         const type  = item.type as 'movie' | 'show'
         const media = type === 'movie' ? item.movie! : item.show!
         const tmdbId = media.ids.tmdb ?? null
-        const poster = tmdbId ? await fetchPoster(tmdbId, type) : null
+        const imdbId = media.ids.imdb ?? null
+        const poster = await fetchPoster(tmdbId, imdbId, type)
 
         return {
           type,
