@@ -10,6 +10,7 @@ import { YouTube } from './YouTube'
 import { Placeholder } from './Placeholder'
 import { News } from './News'
 import { Clock } from './Clock'
+import { Trakt } from './Trakt'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -101,11 +102,11 @@ export const widgets: WidgetDefinition[] = [
 
   // ── Backfill below YouTube (dense placement) ──────────────────────────────
   {
-    id: 'placeholder-7',
-    title: 'Slot 7',
-    description: 'Available',
-    component: () => <Placeholder title="Slot 7" />,
-    color: 'rgba(52, 199, 89, 0.11)',        colorDark: 'rgba(52, 199, 89, 0.18)',
+    id: 'trakt',
+    title: 'Trakt',
+    description: 'Latest releases watchlist',
+    component: Trakt,
+    color: 'rgba(237, 28, 36, 0.09)',        colorDark: 'rgba(237, 28, 36, 0.18)',
   },
   {
     id: 'placeholder-8',
