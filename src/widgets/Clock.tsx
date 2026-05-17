@@ -80,7 +80,7 @@ export function Clock() {
 
       {/* ── Top row: location (left) + current weather (right) ── */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-1 text-black/40">
+        <div className="flex items-center gap-1 text-black/40 dark:text-white/40">
           <svg width={locationfs} height={locationfs} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 10c0 6-8 13-8 13s-8-7-8-13a8 8 0 0 1 16 0Z"/>
             <circle cx="12" cy="10" r="3"/>
@@ -93,7 +93,7 @@ export function Clock() {
         {weather && (
           <div className="flex flex-col items-end leading-none">
             <span style={{ fontSize: iconfs, lineHeight: 1 }}>{weather.emoji}</span>
-            <span className="font-bold text-black/80 tabular-nums" style={{ fontSize: tempfs }}>
+            <span className="font-bold text-black/80 dark:text-white/80 tabular-nums" style={{ fontSize: tempfs }}>
               {weather.temp}°C
             </span>
           </div>
@@ -103,13 +103,13 @@ export function Clock() {
       {/* ── Clock ── */}
       <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
         <span
-          className="whitespace-nowrap tabular-nums font-bold leading-none text-black"
+          className="whitespace-nowrap tabular-nums font-bold leading-none text-black dark:text-white"
           style={{ fontSize: fs }}
         >
           {hh}:{mm}:{ss}
         </span>
         <span
-          className="whitespace-nowrap font-medium text-black/50"
+          className="whitespace-nowrap font-medium text-black/50 dark:text-white/50"
           style={{ fontSize: datefs }}
         >
           {weekday}, {day} {month} {year}
@@ -121,14 +121,14 @@ export function Clock() {
         <div className="flex justify-around pt-1">
           {weather.forecast.map(f => (
             <div key={f.day} className="flex flex-col items-center gap-0.5">
-              <span className="font-medium uppercase tracking-wide text-black/35" style={{ fontSize: forecastDayfs }}>
+              <span className="font-medium uppercase tracking-wide text-black/35 dark:text-white/35" style={{ fontSize: forecastDayfs }}>
                 {f.day}
               </span>
               <div className="flex items-center gap-0.5">
                 <span style={{ fontSize: forecastIconfs, lineHeight: 1 }}>{f.emoji}</span>
                 <div className="flex flex-col leading-none">
-                  <span className="font-bold text-black/70 tabular-nums" style={{ fontSize: forecastTempfs }}>{f.max}°</span>
-                  <span className="text-black/35 tabular-nums" style={{ fontSize: forecastTempfs - 1 }}>{f.min}°</span>
+                  <span className="font-bold text-black/70 dark:text-white/70 tabular-nums" style={{ fontSize: forecastTempfs }}>{f.max}°</span>
+                  <span className="text-black/35 dark:text-white/35 tabular-nums" style={{ fontSize: forecastTempfs - 1 }}>{f.min}°</span>
                 </div>
               </div>
             </div>
