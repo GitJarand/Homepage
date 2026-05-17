@@ -25,7 +25,7 @@ writeFileSync(`${FUNC_DIR}/package.json`, JSON.stringify({ type: 'module' }))
 
 // Vercel function metadata
 writeFileSync(`${FUNC_DIR}/.vc-config.json`, JSON.stringify({
-  runtime: 'nodejs18.x',
+  runtime: 'nodejs20.x',
   handler: 'index.js',
   launcherType: 'Nodejs',
   supportsResponseStreaming: false,
