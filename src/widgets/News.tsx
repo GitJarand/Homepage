@@ -50,7 +50,7 @@ function saveHidden(source: string, hidden: Set<string>) {
   localStorage.setItem(`homepage:news-hidden:${source}`, JSON.stringify([...hidden]))
 }
 
-export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = [], allSources }: { source?: string; label?: string; fetchLimit?: number; defaultHidden?: string[]; allSources?: string[] }) {
+export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHidden = [], allSources }: { source?: string; label?: string; fetchLimit?: number; defaultHidden?: string[]; allSources?: string[] }) {
   const [items, setItems] = useState<NewsItem[]>([])
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -143,8 +143,6 @@ export function News({ source = 'vg', label, fetchLimit = 15, defaultHidden = []
     saveHidden(source, next)
     setHiddenSources(next)
   }
-
-  const enabledCount = availableSources.filter(s => !hiddenSources.has(s)).length
 
   const logo = LOGOS[source]
 

@@ -18,11 +18,6 @@ function extractFirst(xml: string, tag: string): string | null {
   return m ? decodeEntities(m[1].trim()) : null
 }
 
-function extractAttr(xml: string, tag: string, attr: string): string | null {
-  const m = xml.match(new RegExp(`<${tag}[^>]*${attr}="([^"]+)"`))
-  return m ? m[1] : null
-}
-
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 // Resolve a channel URL/handle to { channelId, name }

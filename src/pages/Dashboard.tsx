@@ -607,8 +607,7 @@ export default function Dashboard() {
           </div>
           <span
             className="text-[28px] font-semibold tracking-tight leading-none"
-            style={{ color: 'var(--header-text)' }}
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ color: 'var(--header-text)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {(() => {
               const h = new Date().getHours()
