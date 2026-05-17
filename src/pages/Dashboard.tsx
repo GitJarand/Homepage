@@ -71,7 +71,7 @@ const MAIN_LAYOUT: LayoutPreset = {
   order: [
     'personal-calendar', 'work-calendar', 'notes', 'visual', 'packages', 'clock',
     'news-nrk', 'news-vg', 'youtube', 'rss-feed-1', 'rss-feed-2',
-    'trakt', 'placeholder-8',
+    'trakt', 'football',
   ],
   blocks: [
     [0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1],[5,0,1,1],
