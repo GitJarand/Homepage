@@ -8,6 +8,7 @@ import youtube from './routes/youtube'
 import news from './routes/news'
 import trakt from './routes/trakt'
 import weather from './routes/weather'
+import football from './routes/football'
 
 const app = new Hono()
 app.use('*', cors({ origin: 'http://localhost:5173' }))
@@ -18,6 +19,7 @@ app.route('/api/youtube', youtube)
 app.route('/api/news', news)
 app.route('/api/trakt', trakt)
 app.route('/api/weather', weather)
+app.route('/api/football', football)
 
 app.get('/health', (c) => c.json({ ok: true }))
 

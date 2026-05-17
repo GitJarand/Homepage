@@ -11,6 +11,7 @@ import { Placeholder } from './Placeholder'
 import { News } from './News'
 import { Clock } from './Clock'
 import { Trakt } from './Trakt'
+import { Football } from './Football'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -109,10 +110,10 @@ export const widgets: WidgetDefinition[] = [
     color: 'rgba(237, 28, 36, 0.09)',        colorDark: 'rgba(237, 28, 36, 0.18)',
   },
   {
-    id: 'placeholder-8',
-    title: 'Slot 8',
-    description: 'Available',
-    component: () => <Placeholder title="Slot 8" />,
-    color: 'rgba(255, 149, 0, 0.12)',        colorDark: 'rgba(255, 149, 0, 0.20)',
+    id: 'football',
+    title: 'Football',
+    description: 'Upcoming Premier League, Champions League and Liverpool matches',
+    component: Football,
+    color: 'rgba(200, 16, 46, 0.08)',        colorDark: 'rgba(200, 16, 46, 0.16)',
   },
 ]
