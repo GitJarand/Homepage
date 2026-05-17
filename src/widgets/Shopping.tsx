@@ -83,12 +83,6 @@ export function Shopping() {
         </div>
       )}
 
-      {/* Active list name (single list) */}
-      {lists.length === 1 && activeList && (
-        <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          {activeList.name}
-        </p>
-      )}
 
       {/* Loading */}
       {status === 'loading' && (
@@ -114,16 +108,16 @@ export function Shopping() {
 
       {/* Items */}
       {status === 'ok' && items.length > 0 && (
-        <div className="flex flex-col divide-y divide-[var(--color-border)] overflow-y-auto">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 overflow-y-auto">
           {items.map(item => (
-            <div key={item.id} className="flex items-start gap-2 py-1.5 first:pt-0">
+            <div key={item.id} className="flex items-start gap-2 min-w-0">
               <div className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 rounded-full border border-[var(--color-muted-foreground)] opacity-40" />
               <div className="min-w-0">
-                <p className="text-[13px] font-medium leading-snug text-[var(--color-foreground)]">
+                <p className="text-[13px] font-medium leading-snug text-[var(--color-foreground)] truncate">
                   {item.name}
                 </p>
                 {item.spec && (
-                  <p className="text-[11px] text-[var(--color-muted-foreground)]">{item.spec}</p>
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] truncate">{item.spec}</p>
                 )}
               </div>
             </div>
