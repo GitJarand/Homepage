@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { RefreshButton } from '../components/RefreshButton'
+import { timeAgo } from '../lib/time'
+import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,20 +45,6 @@ function loadWatched(): Set<string> {
 
 function saveWatched(watched: Set<string>) {
   localStorage.setItem(WATCHED_KEY, JSON.stringify([...watched]))
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  return `${months}mo ago`
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -248,6 +238,8 @@ export function YouTube() {
   const [channels, setChannels] = useState<SavedChannel[]>(loadChannels)
   const [watched, setWatched] = useState<Set<string>>(loadWatched)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-youtube')
+  const workMode = useWorkMode()
 
   const handleAdd = useCallback((channel: SavedChannel) => {
     setChannels(prev => {
@@ -277,22 +269,21 @@ export function YouTube() {
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <svg width="36" height="25" viewBox="0 0 36 25" fill="none">
-          <rect width="36" height="25" rx="5" fill="#FF0000"/>
-          <polygon points="14,7 27,12.5 14,18" fill="white"/>
-        </svg>
-        <button
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          : <svg width="36" height="25" viewBox="0 0 36 25" fill="none">
+              <rect width="36" height="25" rx="5" fill="#FF0000"/>
+              <polygon points="14,7 27,12.5 14,18" fill="white"/>
+            </svg>
+        }
+        <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
-          className="absolute left-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
-          title="Refresh"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-          </svg>
-        </button>
+          loading={false}
+          className="absolute left-0 top-0"
+        />
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+      <div className={`flex flex-1 flex-col gap-3 overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         {channels.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">
             No channels added

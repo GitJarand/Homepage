@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getCoords } from '../lib/geolocation'
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
@@ -9,16 +10,7 @@ interface Weather  { temp: number; emoji: string; location: string; forecast: Fo
 
 async function fetchWeather(): Promise<Weather | null> {
   try {
-    // Try to get browser position first
-    const coords = await new Promise<GeolocationCoordinates | null>(resolve => {
-      if (!navigator.geolocation) return resolve(null)
-      navigator.geolocation.getCurrentPosition(
-        p => resolve(p.coords),
-        () => resolve(null),
-        { timeout: 5000, maximumAge: 5 * 60 * 1000 }
-      )
-    })
-
+    const coords = await getCoords()
     const qs = coords ? `?lat=${coords.latitude.toFixed(4)}&lon=${coords.longitude.toFixed(4)}` : ''
     const res = await fetch(`/api/weather/current${qs}`)
     const d   = await res.json() as Partial<Weather>

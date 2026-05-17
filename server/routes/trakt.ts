@@ -109,45 +109,4 @@ trakt.get('/list', async (c) => {
   }
 })
 
-// Debug: see raw Trakt response — /api/trakt/debug
-trakt.get('/debug', async (c) => {
-  if (!CLIENT_ID) return c.json({ error: 'TRAKT_CLIENT_ID not configured' }, 500)
-  const res = await fetch(
-    `https://api.trakt.tv/users/${TRAKT_USER}/lists/${TRAKT_LIST}/items?extended=full&limit=20`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'trakt-api-version': '2',
-        'trakt-api-key': CLIENT_ID,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(8000),
-    }
-  )
-  const raw = await res.json() as unknown[]
-  const types = (raw as Array<{ type?: string }>).map(i => i.type)
-  return c.json({ status: res.status, count: raw.length, types, first: raw[0] ?? null })
-})
-
-// Debug: list all of user's lists — /api/trakt/lists
-trakt.get('/lists', async (c) => {
-  if (!CLIENT_ID) return c.json({ error: 'TRAKT_CLIENT_ID not configured' }, 500)
-  const res = await fetch(
-    `https://api.trakt.tv/users/${TRAKT_USER}/lists`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'trakt-api-version': '2',
-        'trakt-api-key': CLIENT_ID,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(8000),
-    }
-  )
-  const raw = await res.json() as unknown
-  return c.json({ status: res.status, lists: raw })
-})
-
 export default trakt

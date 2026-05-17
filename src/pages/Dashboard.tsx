@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { widgets, type OrderedWidget } from '@/widgets/registry'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
+import { WorkModeContext } from '@/lib/workMode'
 
 function SunIcon() {
   return (
@@ -66,6 +67,15 @@ function WidgetsIcon() {
   )
 }
 
+function BriefcaseIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </svg>
+  )
+}
+
 function MoonIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -79,6 +89,7 @@ function MoonIcon() {
 const ORDER_KEY    = 'homepage:widget-order'
 const SIZES_KEY    = 'homepage:widget-sizes'
 const COLS_KEY     = 'homepage:col-widths'
+const LAYOUT1_KEY  = 'homepage:layout1'
 const LAYOUT2_KEY  = 'homepage:layout2'
 const DISABLED_KEY = 'homepage:disabled-widgets'
 
@@ -154,6 +165,13 @@ function saveOrder(ws: OrderedWidget[]) {
 }
 
 interface SavedLayout2 { order: string[]; sizes: Record<string, WidgetSize>; colWidths: number[]; blocks: Block[] }
+
+function loadLayout1(): SavedLayout2 | null {
+  try { return JSON.parse(localStorage.getItem(LAYOUT1_KEY) ?? 'null') } catch { return null }
+}
+function saveLayout1(l: SavedLayout2) {
+  localStorage.setItem(LAYOUT1_KEY, JSON.stringify(l))
+}
 
 function loadLayout2(): SavedLayout2 | null {
   try { return JSON.parse(localStorage.getItem(LAYOUT2_KEY) ?? 'null') } catch { return null }
@@ -421,6 +439,9 @@ export default function Dashboard() {
   const [scrollLocked, setScrollLocked] = useState(true)
   const [layout2, setLayout2] = useState<SavedLayout2 | null>(loadLayout2)
   const [disabled, setDisabled] = useState<Set<string>>(loadDisabled)
+  const [layout1, setLayout1] = useState<SavedLayout2 | null>(loadLayout1)
+  const [confirmSaveMain, setConfirmSaveMain] = useState(false)
+  const [workMode, setWorkMode] = useState(false)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
@@ -445,6 +466,14 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [widgetMenuOpen])
+
+  // Close save-main confirm popup on outside click
+  useLayoutEffect(() => {
+    if (!confirmSaveMain) return
+    function handler(e: MouseEvent) { void e; setConfirmSaveMain(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [confirmSaveMain])
   const gridRef = useRef<HTMLDivElement>(null)
   const [gridWidth, setGridWidth] = useState(0)
 
@@ -522,6 +551,7 @@ export default function Dashboard() {
   }
 
   return (
+    <WorkModeContext.Provider value={workMode}>
     <div className="min-h-screen">
       {/* Nav bar */}
       <header className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
@@ -540,6 +570,26 @@ export default function Dashboard() {
             >
               <LayoutPreviewIcon blocks={blocks} />
             </button>
+            {layout2 && (
+              <button
+                onClick={() => {
+                  const l = layout2
+                  const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+                  setOrdered(newOrder)
+                  setSizes(l.sizes)
+                  setColWidths(l.colWidths)
+                  saveOrder(newOrder)
+                  saveSizes(l.sizes)
+                  saveColWidths(l.colWidths)
+                }}
+                onContextMenu={e => { e.preventDefault(); setLayout2(null); localStorage.removeItem(LAYOUT2_KEY) }}
+                className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title="Saved layout 2 — right-click to delete"
+              >
+                <LayoutPreviewIcon blocks={layout2.blocks} />
+              </button>
+            )}
             <button
               onClick={() => {
                 const snapshot: SavedLayout2 = {
@@ -553,7 +603,7 @@ export default function Dashboard() {
               }}
               className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
               style={{ color: 'var(--header-text)' }}
-              title="Save current layout as default 2"
+              title="Save current layout as layout 2"
             >
               <SaveIcon />
             </button>
@@ -575,8 +625,8 @@ export default function Dashboard() {
                 <WidgetsIcon />
               </button>
               {widgetMenuOpen && (
-                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] py-1.5 shadow-lg"
-                  style={{ backdropFilter: 'blur(12px)' }}
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] rounded-xl border border-[var(--card-border)] py-1.5 shadow-lg"
+                  style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}
                 >
                   {ordered.map(w => (
                     <button
@@ -616,35 +666,6 @@ export default function Dashboard() {
             })()}
           </span>
           <div className="absolute right-8 flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              {layout2 && (
-                <button
-                  onClick={() => {
-                    const l = layout2
-                    const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
-                    setOrdered(newOrder)
-                    setSizes(l.sizes)
-                    setColWidths(l.colWidths)
-                    saveOrder(newOrder)
-                    saveSizes(l.sizes)
-                    saveColWidths(l.colWidths)
-                  }}
-                  className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
-                  style={{ color: 'var(--header-text)' }}
-                  title="Saved layout"
-                >
-                  <LayoutPreviewIcon blocks={layout2.blocks} />
-                </button>
-              )}
-              <button
-                onClick={() => applyPreset(MAIN_LAYOUT)}
-                className="rounded p-0.5 opacity-50 hover:opacity-100 transition-opacity"
-                style={{ color: 'var(--header-text)' }}
-                title="Default layout"
-              >
-                <LayoutPreviewIcon blocks={MAIN_LAYOUT.blocks} />
-              </button>
-            </div>
             <button
               onClick={toggle}
               className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
@@ -653,6 +674,80 @@ export default function Dashboard() {
             >
               {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
+            <button
+              onClick={() => setWorkMode(m => !m)}
+              className="rounded-full p-1.5 transition-opacity"
+              style={{ color: 'var(--header-text)', opacity: workMode ? 1 : 0.5 }}
+              title={workMode ? 'Exit work mode' : 'Work mode'}
+            >
+              <BriefcaseIcon />
+            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="relative">
+                <button
+                  onClick={() => setConfirmSaveMain(true)}
+                  className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+                  style={{ color: 'var(--header-text)' }}
+                  title="Save as main layout"
+                >
+                  <SaveIcon />
+                </button>
+                {confirmSaveMain && (
+                  <div
+                    className="absolute right-0 top-full mt-2 z-50 w-52 rounded-xl border border-[var(--card-border)] p-3 shadow-lg"
+                    style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}
+                  >
+                    <p className="mb-2.5 text-[12px] text-[var(--color-foreground)]">Replace the saved main layout with the current one?</p>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setConfirmSaveMain(false)}
+                        className="rounded px-2.5 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          const snapshot: SavedLayout2 = {
+                            order: ordered.map(w => w.id),
+                            sizes: { ...sizes },
+                            colWidths: [...colWidths],
+                            blocks: [...blocks],
+                          }
+                          saveLayout1(snapshot)
+                          setLayout1(snapshot)
+                          setConfirmSaveMain(false)
+                        }}
+                        className="rounded bg-[#007AFF] px-2.5 py-1 text-[11px] text-white hover:opacity-90 transition-opacity"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  const l = layout1
+                  if (l) {
+                    const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+                    setOrdered(newOrder)
+                    setSizes(l.sizes)
+                    setColWidths(l.colWidths)
+                    saveOrder(newOrder)
+                    saveSizes(l.sizes)
+                    saveColWidths(l.colWidths)
+                  } else {
+                    applyPreset(MAIN_LAYOUT)
+                  }
+                }}
+                onContextMenu={layout1 ? e => { e.preventDefault(); setLayout1(null); localStorage.removeItem(LAYOUT1_KEY) } : undefined}
+                className="rounded p-0.5 opacity-50 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title={layout1 ? 'Main layout — right-click to reset' : 'Default layout'}
+              >
+                <LayoutPreviewIcon blocks={layout1 ? layout1.blocks : MAIN_LAYOUT.blocks} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -698,5 +793,6 @@ export default function Dashboard() {
         </DndContext>
       </main>
     </div>
+    </WorkModeContext.Provider>
   )
 }

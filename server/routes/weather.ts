@@ -1,10 +1,10 @@
 import { Hono } from 'hono'
+import { reverseGeocode } from '../lib/geocode'
 
 const weather = new Hono()
 
-const DEFAULT_LAT      = process.env.WEATHER_LAT      ?? '59.9139'
-const DEFAULT_LON      = process.env.WEATHER_LON      ?? '10.7522'
-const DEFAULT_LOCATION = process.env.WEATHER_LOCATION ?? 'Oslo'
+const DEFAULT_LAT = process.env.WEATHER_LAT ?? '59.9139'
+const DEFAULT_LON = process.env.WEATHER_LON ?? '10.7522'
 
 function symbolToEmoji(code: string): string {
   if (code.includes('thunder'))                            return '⛈️'
@@ -34,11 +34,10 @@ interface TimeseriesEntry {
 weather.get('/current', async (c) => {
   const lat = c.req.query('lat') ?? DEFAULT_LAT
   const lon = c.req.query('lon') ?? DEFAULT_LON
-  const clientProvided = !!c.req.query('lat')
 
   try {
-    // Fetch weather + optional reverse geocode in parallel
-    const [weatherRes, geoRes] = await Promise.all([
+    // Fetch weather + reverse geocode in parallel
+    const [weatherRes, location] = await Promise.all([
       fetch(
         `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
         {
@@ -49,28 +48,13 @@ weather.get('/current', async (c) => {
           signal: AbortSignal.timeout(8000),
         }
       ),
-      clientProvided
-        ? fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-            {
-              headers: { 'User-Agent': 'HomepageDashboard/1.0 github.com/GitJarand/Homepage' },
-              signal: AbortSignal.timeout(5000),
-            }
-          )
-        : Promise.resolve(null),
+      reverseGeocode(lat, lon),
     ])
 
     if (!weatherRes.ok) return c.json({ error: `MET API ${weatherRes.status}` }, 500)
 
     const data       = await weatherRes.json() as { properties: { timeseries: TimeseriesEntry[] } }
     const timeseries = data.properties.timeseries
-
-    // Location name via reverse geocode, or env default
-    let location = DEFAULT_LOCATION
-    if (geoRes?.ok) {
-      const geo = await geoRes.json() as { address?: { city?: string; town?: string; village?: string; suburb?: string } }
-      location = geo.address?.city ?? geo.address?.town ?? geo.address?.village ?? geo.address?.suburb ?? DEFAULT_LOCATION
-    }
 
     // Current conditions
     const current = timeseries[0]

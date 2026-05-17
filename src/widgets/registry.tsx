@@ -3,7 +3,6 @@ import type { WidgetDefinition } from './types'
 export type OrderedWidget = WidgetDefinition
 import { PersonalCalendar } from './PersonalCalendar'
 import { Notes } from './Notes'
-import { Visual } from './Visual'
 import { Packages } from './Packages'
 import { YouTube } from './YouTube'
 import { News } from './News'
@@ -35,13 +34,6 @@ export const widgets: WidgetDefinition[] = [
     description: 'Recent notes',
     component: Notes,
     color: 'rgba(255, 204, 0, 0.14)',        colorDark: 'rgba(255, 204, 0, 0.18)',
-  },
-  {
-    id: 'visual',
-    title: 'Visual',
-    description: 'Visual information feed',
-    component: Visual,
-    color: 'rgba(175, 82, 222, 0.12)',       colorDark: 'rgba(175, 82, 222, 0.22)',
   },
   {
     id: 'packages',

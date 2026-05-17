@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
+import { reverseGeocode } from '../lib/geocode'
 
 const electricity = new Hono()
 
-const ZONE = process.env.ELECTRICITY_ZONE ?? 'NO2' // Stavanger/SW Norway
+const ZONE        = process.env.ELECTRICITY_ZONE ?? 'NO2'
+const DEFAULT_LAT = process.env.WEATHER_LAT      ?? '58.9611'
+const DEFAULT_LON = process.env.WEATHER_LON      ?? '5.6168'
 const BASE = 'https://www.hvakosterstrommen.no/api/v1/prices'
 
 interface RawPrice {
@@ -45,8 +48,14 @@ async function fetchPrices(date: Date): Promise<HourPrice[]> {
 // GET /api/electricity
 electricity.get('/', async (c) => {
   try {
+    const lat = c.req.query('lat') ?? DEFAULT_LAT
+    const lon = c.req.query('lon') ?? DEFAULT_LON
+
     const now      = new Date()
-    const today    = await fetchPrices(now)
+    const [today, location] = await Promise.all([
+      fetchPrices(now),
+      reverseGeocode(lat, lon),
+    ])
 
     // Try tomorrow — available after ~13:00 CET
     let tomorrow: HourPrice[] = []
@@ -56,7 +65,7 @@ electricity.get('/', async (c) => {
       tomorrow = await fetchPrices(tmr)
     } catch { /* not yet published */ }
 
-    return c.json({ today, tomorrow, zone: ZONE, currentHour: now.getHours() })
+    return c.json({ today, tomorrow, zone: ZONE, location, currentHour: now.getHours() })
   } catch (err) {
     return c.json({ error: String(err) }, 500)
   }

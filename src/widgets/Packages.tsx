@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ function AddForm({ carriers, onAdd }: { carriers: CarrierInfo[]; onAdd: (entry: 
 export function Packages() {
   const [entries, setEntries] = useState<SavedEntry[]>(loadEntries)
   const carriers = useCarriers()
+  const [blurred, toggleBlur] = useBlur('homepage:blur-packages')
 
   const handleAdd = useCallback((entry: SavedEntry) => {
     setEntries((prev) => {
@@ -255,10 +257,11 @@ export function Packages() {
 
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
-      <div className="mb-3 flex shrink-0 flex-col items-center pb-3">
+      <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         <div className="text-3xl leading-none">📦</div>
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+      <div className={cn('flex flex-1 flex-col gap-2 overflow-y-auto transition-[filter] duration-200', blurred && 'blur-sm select-none pointer-events-none')}>
         {entries.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">
             No packages tracked

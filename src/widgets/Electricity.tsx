@@ -1,10 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshButton } from '../components/RefreshButton'
+import { getCoords } from '../lib/geolocation'
+
+const ZONE_NAMES: Record<string, string> = {
+  NO1: 'Oslo',
+  NO2: 'Kristiansand',
+  NO3: 'Trondheim',
+  NO4: 'Tromsø',
+  NO5: 'Bergen',
+}
 
 interface HourPrice { hour: number; price: number }
 interface ApiResponse {
   today: HourPrice[]
   tomorrow: HourPrice[]
   zone: string
+  location: string
   currentHour: number
   error?: string
 }
@@ -18,6 +29,18 @@ function priceColor(price: number, min: number, max: number): string {
 
 function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour: number }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [svgSize, setSvgSize] = useState({ w: 400, h: 100 })
+
+  useEffect(() => {
+    if (!svgRef.current) return
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) setSvgSize({ w: width, h: height })
+    })
+    ro.observe(svgRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   if (!prices.length) return null
 
   const W = 400
@@ -25,6 +48,10 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
   const PAD = { top: 8, right: 4, bottom: 18, left: 28 }
   const chartW = W - PAD.left - PAD.right
   const chartH = H - PAD.top - PAD.bottom
+
+  // Counter-scale so text renders at natural pixel size despite preserveAspectRatio="none"
+  const tx = W / svgSize.w
+  const ty = H / svgSize.h
 
   const min   = Math.min(...prices.map(p => p.price))
   const max   = Math.max(...prices.map(p => p.price))
@@ -81,9 +108,9 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
             className="text-[var(--color-foreground)]"
           />
           <text
-            x={PAD.left - 4} y={y(val)}
+            transform={`translate(${PAD.left - 4},${y(val)}) scale(${tx},${ty})`}
             textAnchor="end" dominantBaseline="middle"
-            fontSize="7" fill="currentColor" fillOpacity="0.35"
+            fontSize="9" fill="currentColor" fillOpacity="0.55"
             className="text-[var(--color-foreground)]"
           >
             {Math.round(val)}
@@ -132,9 +159,9 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
         return (
           <text
             key={h}
-            x={pt.px} y={H - 3}
+            transform={`translate(${pt.px},${H - 3}) scale(${tx},${ty})`}
             textAnchor="middle"
-            fontSize="7" fill="currentColor" fillOpacity="0.35"
+            fontSize="9" fill="currentColor" fillOpacity="0.55"
             className="text-[var(--color-foreground)]"
           >
             {String(h).padStart(2, '0')}
@@ -153,10 +180,15 @@ export function Electricity() {
 
   useEffect(() => {
     setStatus('loading')
-    fetch('/api/electricity')
-      .then(r => r.json() as Promise<ApiResponse>)
-      .then(d => { if (d.error) { setStatus('error'); return }; setData(d); setStatus('ok') })
-      .catch(() => setStatus('error'))
+    const load = async () => {
+      const coords = await getCoords()
+      const qs = coords ? `?lat=${coords.latitude.toFixed(4)}&lon=${coords.longitude.toFixed(4)}` : ''
+      const d = await fetch(`/api/electricity${qs}`).then(r => r.json() as Promise<ApiResponse>)
+      if (d.error) { setStatus('error'); return }
+      setData(d)
+      setStatus('ok')
+    }
+    load().catch(() => setStatus('error'))
   }, [refreshKey])
 
   const prices      = showTomorrow ? (data?.tomorrow ?? []) : (data?.today ?? [])
@@ -169,21 +201,16 @@ export function Electricity() {
   return (
     <div className="relative flex h-full flex-col px-4 pb-3 pt-3">
       {/* Header */}
-      <div className="relative mb-1 flex shrink-0 items-center justify-center">
+      <div className="relative mb-3 flex shrink-0 items-center justify-center pb-3">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffd60a" className="shrink-0">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
 
-        <button
+        <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
-          disabled={status === 'loading'}
-          className="absolute left-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
-        >
-          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-          </svg>
-        </button>
+          loading={status === 'loading'}
+          className="absolute left-0"
+        />
 
         {hasTomorrow && (
           <div className="absolute right-0 flex gap-1">
@@ -206,11 +233,8 @@ export function Electricity() {
 
       {/* Current price */}
       {status === 'ok' && current && !showTomorrow && (
-        <div className="mb-2 flex items-baseline justify-center gap-1">
-          <span
-            className="text-[36px] font-semibold tabular-nums leading-none"
-            style={{ color: priceColor(current.price, min, max) }}
-          >
+        <div className="mb-1 flex items-baseline justify-center gap-1">
+          <span className="text-[36px] font-semibold tabular-nums leading-none text-[var(--color-foreground)]">
             {current.price.toFixed(1)}
           </span>
           <span className="text-[12px] text-[var(--color-muted-foreground)]">øre/kWh</span>
@@ -231,7 +255,7 @@ export function Electricity() {
       {status === 'ok' && prices.length > 0 && (
         <div className="mt-1 flex justify-between text-[10px] text-[var(--color-muted-foreground)]">
           <span style={{ color: '#34c759' }}>↓ {min.toFixed(1)} øre</span>
-          <span className="opacity-40">{data?.zone}</span>
+          <span className="opacity-40">{data?.location ?? (data?.zone ? (ZONE_NAMES[data.zone] ?? data.zone) : '')}</span>
           <span style={{ color: '#ff3b30' }}>↑ {max.toFixed(1)} øre</span>
         </div>
       )}

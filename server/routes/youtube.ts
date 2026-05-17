@@ -1,17 +1,9 @@
 import { Hono } from 'hono'
+import { decodeEntities } from '../lib/html'
 
 const youtube = new Hono()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;/g, "'")
-}
 
 function extractFirst(xml: string, tag: string): string | null {
   const m = xml.match(new RegExp(`<${tag}[^>]*>([^<]+)<\/${tag}>`))

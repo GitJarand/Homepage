@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { RefreshButton } from '../components/RefreshButton'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 interface BringList { id: string; name: string }
 interface BringItem { id: string; name: string; spec: string }
@@ -12,6 +14,7 @@ export function Shopping() {
   const [status, setStatus]       = useState<'loading' | 'error' | 'ok'>('loading')
   const [error, setError]         = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-shopping')
 
   // Load lists once on mount
   useEffect(() => {
@@ -51,18 +54,17 @@ export function Shopping() {
         />
 
         {/* Refresh */}
-        <button
+        <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
-          disabled={status === 'loading'}
-          className="absolute left-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
-          title="Refresh"
-        >
-          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-          </svg>
-        </button>
+          loading={status === 'loading'}
+          className="absolute left-0 top-0"
+        />
+
+        {/* Blur toggle */}
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
+
+      <div className={`flex flex-1 flex-col gap-2 transition-[filter] duration-200 overflow-hidden ${blurred ? 'blur-sm select-none pointer-events-none' : ''}`}>
 
       {/* List switcher */}
       {lists.length > 1 && (
@@ -124,6 +126,7 @@ export function Shopping() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

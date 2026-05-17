@@ -1,10 +1,32 @@
 import { useState } from 'react'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
+// Earthy pastels for the open editor — present but muted
 const EXPANDED_COLORS = [
-  '#fef08a', '#86efac', '#93c5fd', '#f9a8d4', '#c4b5fd', '#fdba74',
+  '#e8dcc8',  // parchment
+  '#c8d4bc',  // sage
+  '#bec8d4',  // river stone
+  '#d8c4bc',  // clay rose
+  '#cac0d4',  // dried lavender
+  '#d4c4a8',  // warm sand
 ]
+// Deeper earthy tones for the top band
 const EXPANDED_BANDS = [
-  '#ca8a04', '#16a34a', '#2563eb', '#db2777', '#7c3aed', '#ea580c',
+  '#9e845a',  // amber brown
+  '#5e8660',  // moss
+  '#5a6e88',  // slate
+  '#885450',  // terracotta
+  '#6a5e7e',  // plum
+  '#8a6a42',  // leather
+]
+// Very faint tints for the grid — each note has its own hue
+const GRID_COLORS = [
+  'rgba(180,156,110, 0.20)',  // parchment
+  'rgba(130,168,122, 0.20)',  // sage
+  'rgba(120,148,175, 0.20)',  // stone
+  'rgba(175,136,128, 0.20)',  // clay
+  'rgba(148,136,175, 0.20)',  // lavender
+  'rgba(175,150,106, 0.20)',  // sand
 ]
 
 interface Note {
@@ -39,6 +61,7 @@ function notefontSize(text: string): number {
 export function Notes() {
   const [notes, setNotes] = useState<Note[]>(loadNotes)
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-notes', () => setActiveIdx(null))
 
   function updateNote(idx: number, patch: Partial<Note>) {
     setNotes(prev => {
@@ -56,16 +79,17 @@ export function Notes() {
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         <span className="text-2xl leading-none">📝</span>
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
 
       {/* 3×2 post-it grid */}
-      <div className="grid flex-1 grid-cols-3 grid-rows-2 gap-2">
+      <div className={`grid flex-1 grid-cols-3 grid-rows-2 gap-2 transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         {notes.map((note, i) => (
           <button
             key={i}
             onClick={() => setActiveIdx(i)}
             className="relative overflow-hidden rounded text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:opacity-90 active:scale-95"
-            style={{ backgroundColor: 'rgba(254, 240, 138, 0.38)' }}
+            style={{ backgroundColor: GRID_COLORS[i] }}
           >
             {/* Header fills the whole note */}
             <div className="absolute inset-0 overflow-hidden p-1.5 pb-4 pr-3">
@@ -90,7 +114,7 @@ export function Notes() {
       </div>
 
       {/* Expanded editor */}
-      {activeIdx !== null && active !== null && (
+      {activeIdx !== null && active !== null && !blurred && (
         <div
           className="absolute inset-1.5 flex flex-col overflow-hidden rounded-lg shadow-2xl"
           style={{ backgroundColor: EXPANDED_COLORS[activeIdx] }}

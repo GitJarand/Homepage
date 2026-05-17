@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { decodeEntities } from '../lib/html'
 
 const news = new Hono()
 
@@ -58,15 +59,6 @@ function labelFromUrl(url: string): string {
   } catch { return '' }
 }
 
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;/g, "'")
-    .replace(/&#xA0;/g, ' ')
-}
 
 function extractTag(xml: string, tag: string): string | null {
   const m = xml.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`)
