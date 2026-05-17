@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useWorkMode } from '../lib/workMode'
 
 function EyeIcon() {
@@ -27,6 +27,16 @@ function EyeOffIcon() {
 export function useBlur(storageKey: string, onBlur?: () => void): [boolean, () => void] {
   const workMode = useWorkMode()
   const [blurred, setBlurred] = useState(() => localStorage.getItem(storageKey) === '1')
+  const prevWorkMode = useRef(workMode)
+
+  // When work mode turns off, unblur
+  useEffect(() => {
+    if (prevWorkMode.current && !workMode) {
+      setBlurred(false)
+      localStorage.setItem(storageKey, '0')
+    }
+    prevWorkMode.current = workMode
+  }, [workMode, storageKey])
 
   function toggle() {
     setBlurred(b => {

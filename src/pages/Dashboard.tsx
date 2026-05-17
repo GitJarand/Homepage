@@ -666,6 +666,22 @@ export default function Dashboard() {
             })()}
           </span>
           <div className="absolute right-8 flex items-center gap-3">
+            <button
+              onClick={toggle}
+              className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--header-text)' }}
+              aria-label="Toggle dark mode"
+            >
+              {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <button
+              onClick={() => setWorkMode(m => !m)}
+              className="rounded-full p-1.5 transition-opacity"
+              style={{ color: 'var(--header-text)', opacity: workMode ? 1 : 0.5 }}
+              title={workMode ? 'Exit work mode' : 'Work mode'}
+            >
+              <BriefcaseIcon />
+            </button>
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 <button
@@ -732,22 +748,6 @@ export default function Dashboard() {
                 <LayoutPreviewIcon blocks={layout1 ? layout1.blocks : MAIN_LAYOUT.blocks} />
               </button>
             </div>
-            <button
-              onClick={() => setWorkMode(m => !m)}
-              className="rounded-full p-1.5 transition-opacity"
-              style={{ color: 'var(--header-text)', opacity: workMode ? 1 : 0.5 }}
-              title={workMode ? 'Exit work mode' : 'Work mode'}
-            >
-              <BriefcaseIcon />
-            </button>
-            <button
-              onClick={toggle}
-              className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
-              style={{ color: 'var(--header-text)' }}
-              aria-label="Toggle dark mode"
-            >
-              {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-            </button>
           </div>
         </div>
       </header>

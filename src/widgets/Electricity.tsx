@@ -1,11 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
+import { getCoords } from '../lib/geolocation'
+
+const ZONE_NAMES: Record<string, string> = {
+  NO1: 'Oslo',
+  NO2: 'Kristiansand',
+  NO3: 'Trondheim',
+  NO4: 'Tromsø',
+  NO5: 'Bergen',
+}
 
 interface HourPrice { hour: number; price: number }
 interface ApiResponse {
   today: HourPrice[]
   tomorrow: HourPrice[]
   zone: string
+  location: string
   currentHour: number
   error?: string
 }
@@ -170,10 +180,15 @@ export function Electricity() {
 
   useEffect(() => {
     setStatus('loading')
-    fetch('/api/electricity')
-      .then(r => r.json() as Promise<ApiResponse>)
-      .then(d => { if (d.error) { setStatus('error'); return }; setData(d); setStatus('ok') })
-      .catch(() => setStatus('error'))
+    const load = async () => {
+      const coords = await getCoords()
+      const qs = coords ? `?lat=${coords.latitude.toFixed(4)}&lon=${coords.longitude.toFixed(4)}` : ''
+      const d = await fetch(`/api/electricity${qs}`).then(r => r.json() as Promise<ApiResponse>)
+      if (d.error) { setStatus('error'); return }
+      setData(d)
+      setStatus('ok')
+    }
+    load().catch(() => setStatus('error'))
   }, [refreshKey])
 
   const prices      = showTomorrow ? (data?.tomorrow ?? []) : (data?.today ?? [])
@@ -240,7 +255,7 @@ export function Electricity() {
       {status === 'ok' && prices.length > 0 && (
         <div className="mt-1 flex justify-between text-[10px] text-[var(--color-muted-foreground)]">
           <span style={{ color: '#34c759' }}>↓ {min.toFixed(1)} øre</span>
-          <span className="opacity-40">{data?.zone}</span>
+          <span className="opacity-40">{data?.location ?? (data?.zone ? (ZONE_NAMES[data.zone] ?? data.zone) : '')}</span>
           <span style={{ color: '#ff3b30' }}>↑ {max.toFixed(1)} øre</span>
         </div>
       )}
