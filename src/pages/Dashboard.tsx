@@ -629,9 +629,10 @@ export default function Dashboard() {
                     saveSizes(l.sizes)
                     saveColWidths(l.colWidths)
                   }}
+                  onContextMenu={e => { e.preventDefault(); setLayout2(null); localStorage.removeItem(LAYOUT2_KEY) }}
                   className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
                   style={{ color: 'var(--header-text)' }}
-                  title="Saved layout"
+                  title="Saved layout — right-click to delete"
                 >
                   <LayoutPreviewIcon blocks={layout2.blocks} />
                 </button>
