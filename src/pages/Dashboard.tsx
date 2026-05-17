@@ -430,6 +430,7 @@ export default function Dashboard() {
   const [layout2, setLayout2] = useState<SavedLayout2 | null>(loadLayout2)
   const [disabled, setDisabled] = useState<Set<string>>(loadDisabled)
   const [layout1, setLayout1] = useState<SavedLayout2 | null>(loadLayout1)
+  const [confirmSaveMain, setConfirmSaveMain] = useState(false)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
@@ -454,6 +455,14 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [widgetMenuOpen])
+
+  // Close save-main confirm popup on outside click
+  useLayoutEffect(() => {
+    if (!confirmSaveMain) return
+    function handler(e: MouseEvent) { void e; setConfirmSaveMain(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [confirmSaveMain])
   const gridRef = useRef<HTMLDivElement>(null)
   const [gridWidth, setGridWidth] = useState(0)
 
@@ -646,23 +655,48 @@ export default function Dashboard() {
           </span>
           <div className="absolute right-8 flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => {
-                  const snapshot: SavedLayout2 = {
-                    order: ordered.map(w => w.id),
-                    sizes: { ...sizes },
-                    colWidths: [...colWidths],
-                    blocks: [...blocks],
-                  }
-                  saveLayout1(snapshot)
-                  setLayout1(snapshot)
-                }}
-                className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
-                style={{ color: 'var(--header-text)' }}
-                title="Save as main layout"
-              >
-                <SaveIcon />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setConfirmSaveMain(true)}
+                  className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+                  style={{ color: 'var(--header-text)' }}
+                  title="Save as main layout"
+                >
+                  <SaveIcon />
+                </button>
+                {confirmSaveMain && (
+                  <div
+                    className="absolute right-0 top-full mt-2 z-50 w-52 rounded-xl border border-[var(--card-border)] p-3 shadow-lg"
+                    style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}
+                  >
+                    <p className="mb-2.5 text-[12px] text-[var(--color-foreground)]">Replace the saved main layout with the current one?</p>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setConfirmSaveMain(false)}
+                        className="rounded px-2.5 py-1 text-[11px] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          const snapshot: SavedLayout2 = {
+                            order: ordered.map(w => w.id),
+                            sizes: { ...sizes },
+                            colWidths: [...colWidths],
+                            blocks: [...blocks],
+                          }
+                          saveLayout1(snapshot)
+                          setLayout1(snapshot)
+                          setConfirmSaveMain(false)
+                        }}
+                        className="rounded bg-[#007AFF] px-2.5 py-1 text-[11px] text-white hover:opacity-90 transition-opacity"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => {
                   const l = layout1
