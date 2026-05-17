@@ -575,8 +575,8 @@ export default function Dashboard() {
                 <WidgetsIcon />
               </button>
               {widgetMenuOpen && (
-                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] py-1.5 shadow-lg"
-                  style={{ backdropFilter: 'blur(12px)' }}
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] rounded-xl border border-[var(--card-border)] py-1.5 shadow-lg"
+                  style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}
                 >
                   {ordered.map(w => (
                     <button

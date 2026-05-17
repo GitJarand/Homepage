@@ -194,7 +194,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
             </button>
             )}
             {showFilter && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] py-1 shadow-xl backdrop-blur-xl" style={{ backgroundColor: 'var(--card-bg)' }}>
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-[var(--color-border)] py-1 shadow-xl" style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5">
                   <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">Sources</span>
                   <div className="flex gap-2">
