@@ -7,27 +7,43 @@ function pad(n: number) {
 interface Forecast { day: string; emoji: string; max: number; min: number }
 interface Weather  { temp: number; emoji: string; location: string; forecast: Forecast[] }
 
+async function fetchWeather(): Promise<Weather | null> {
+  try {
+    // Try to get browser position first
+    const coords = await new Promise<GeolocationCoordinates | null>(resolve => {
+      if (!navigator.geolocation) return resolve(null)
+      navigator.geolocation.getCurrentPosition(
+        p => resolve(p.coords),
+        () => resolve(null),
+        { timeout: 5000, maximumAge: 5 * 60 * 1000 }
+      )
+    })
+
+    const qs = coords ? `?lat=${coords.latitude.toFixed(4)}&lon=${coords.longitude.toFixed(4)}` : ''
+    const res = await fetch(`/api/weather/current${qs}`)
+    const d   = await res.json() as Partial<Weather>
+    if (d.temp !== undefined) return d as Weather
+  } catch {}
+  return null
+}
+
 export function Clock() {
-  const [now, setNow]       = useState(() => new Date())
-  const wrapRef             = useRef<HTMLDivElement>(null)
-  const [fs, setFs]         = useState(40)
+  const [now, setNow]         = useState(() => new Date())
+  const wrapRef               = useRef<HTMLDivElement>(null)
+  const [fs, setFs]           = useState(40)
   const [weather, setWeather] = useState<Weather | null>(null)
 
-  // Tick every second
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  // Responsive clock font size
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
     const calc = () => {
-      const w = el.clientWidth
-      const h = el.clientHeight
-      const byWidth  = Math.floor(w / (8 * 0.62))
-      const byHeight = Math.floor(h * 0.30)   // clock takes ~30% of height now
+      const byWidth  = Math.floor(el.clientWidth / (8 * 0.62))
+      const byHeight = Math.floor(el.clientHeight * 0.30)
       setFs(Math.min(byWidth, byHeight))
     }
     calc()
@@ -36,18 +52,9 @@ export function Clock() {
     return () => ro.disconnect()
   }, [])
 
-  // Weather — fetch on mount, refresh every 10 min
   useEffect(() => {
-    function load() {
-      fetch('/api/weather/current')
-        .then(r => r.json())
-        .then((d: Partial<Weather>) => {
-          if (d.temp !== undefined) setWeather(d as Weather)
-        })
-        .catch(() => {})
-    }
-    load()
-    const id = setInterval(load, 10 * 60 * 1000)
+    fetchWeather().then(w => { if (w) setWeather(w) })
+    const id = setInterval(() => fetchWeather().then(w => { if (w) setWeather(w) }), 10 * 60 * 1000)
     return () => clearInterval(id)
   }, [])
 
@@ -60,7 +67,6 @@ export function Clock() {
   const month   = now.toLocaleDateString('en-GB', { month: 'long' })
   const year    = now.getFullYear()
 
-  // All sizes derived from fs so they scale together
   const datefs        = Math.max(9,  Math.round(fs * 0.22))
   const locationfs    = Math.max(9,  Math.round(fs * 0.20))
   const iconfs        = Math.max(14, Math.round(fs * 0.45))
@@ -74,18 +80,16 @@ export function Clock() {
 
       {/* ── Top row: location (left) + current weather (right) ── */}
       <div className="flex items-start justify-between">
-        {/* Location */}
         <div className="flex items-center gap-1 text-black/40">
           <svg width={locationfs} height={locationfs} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 10c0 6-8 13-8 13s-8-7-8-13a8 8 0 0 1 16 0Z"/>
             <circle cx="12" cy="10" r="3"/>
           </svg>
-          <span className="font-medium text-black/40" style={{ fontSize: locationfs }}>
+          <span className="font-medium" style={{ fontSize: locationfs }}>
             {weather?.location ?? '…'}
           </span>
         </div>
 
-        {/* Current weather: large emoji + temp */}
         {weather && (
           <div className="flex flex-col items-end leading-none">
             <span style={{ fontSize: iconfs, lineHeight: 1 }}>{weather.emoji}</span>
@@ -112,7 +116,7 @@ export function Clock() {
         </span>
       </div>
 
-      {/* ── 3-day forecast ── */}
+      {/* ── 3-day forecast: emoji + temps on one line ── */}
       {weather && weather.forecast.length > 0 && (
         <div className="flex justify-around pt-1">
           {weather.forecast.map(f => (
@@ -120,13 +124,13 @@ export function Clock() {
               <span className="font-medium uppercase tracking-wide text-black/35" style={{ fontSize: forecastDayfs }}>
                 {f.day}
               </span>
-              <span style={{ fontSize: forecastIconfs, lineHeight: 1.1 }}>{f.emoji}</span>
-              <span className="font-bold text-black/70 tabular-nums" style={{ fontSize: forecastTempfs }}>
-                {f.max}°
-              </span>
-              <span className="text-black/35 tabular-nums" style={{ fontSize: forecastTempfs - 1 }}>
-                {f.min}°
-              </span>
+              <div className="flex items-center gap-0.5">
+                <span style={{ fontSize: forecastIconfs, lineHeight: 1 }}>{f.emoji}</span>
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-black/70 tabular-nums" style={{ fontSize: forecastTempfs }}>{f.max}°</span>
+                  <span className="text-black/35 tabular-nums" style={{ fontSize: forecastTempfs - 1 }}>{f.min}°</span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
