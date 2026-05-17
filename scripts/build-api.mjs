@@ -1,14 +1,44 @@
 import { build } from 'esbuild'
-import { renameSync } from 'fs'
+import { mkdirSync, writeFileSync } from 'fs'
+import { cp } from 'fs/promises'
 
+const FUNC_DIR = '.vercel/output/functions/api/[...slug].func'
+
+// Create output directories
+mkdirSync(FUNC_DIR, { recursive: true })
+mkdirSync('.vercel/output/static', { recursive: true })
+
+// Copy Vite build → static output
+await cp('dist', '.vercel/output/static', { recursive: true })
+
+// Bundle entire server (all npm deps included — no external, self-contained)
 await build({
   entryPoints: ['server/vercel-handler.ts'],
   bundle: true,
-  packages: 'external',
   platform: 'node',
   format: 'esm',
-  outfile: 'api/_handler.js',
+  outfile: `${FUNC_DIR}/index.js`,
 })
 
-renameSync('api/_handler.js', 'api/[...slug].js')
-console.log('✓ api/[...slug].js bundled')
+// Tell Node.js this directory is ESM
+writeFileSync(`${FUNC_DIR}/package.json`, JSON.stringify({ type: 'module' }))
+
+// Vercel function metadata
+writeFileSync(`${FUNC_DIR}/.vc-config.json`, JSON.stringify({
+  runtime: 'nodejs18.x',
+  handler: 'index.js',
+  launcherType: 'Nodejs',
+  supportsResponseStreaming: false,
+}))
+
+// Top-level routing: /api/* → function, everything else → SPA
+writeFileSync('.vercel/output/config.json', JSON.stringify({
+  version: 3,
+  routes: [
+    { src: '^/api(/.*)?$', dest: '/api/[...slug]' },
+    { handle: 'filesystem' },
+    { src: '^/(.*)$', dest: '/index.html' },
+  ],
+}))
+
+console.log('✓ Vercel build output ready')
