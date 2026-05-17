@@ -1,3 +1,4 @@
+import { getRequestListener } from '@hono/node-server'
 import app from './app'
 
-export default app.fetch
+export default getRequestListener(app.fetch)

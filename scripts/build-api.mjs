@@ -16,12 +16,9 @@ await build({
   entryPoints: ['server/vercel-handler.ts'],
   bundle: true,
   platform: 'node',
-  format: 'esm',
+  format: 'cjs',
   outfile: `${FUNC_DIR}/index.js`,
 })
-
-// Tell Node.js this directory is ESM
-writeFileSync(`${FUNC_DIR}/package.json`, JSON.stringify({ type: 'module' }))
 
 // Vercel function metadata
 writeFileSync(`${FUNC_DIR}/.vc-config.json`, JSON.stringify({
