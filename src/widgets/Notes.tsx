@@ -1,10 +1,31 @@
 import { useState } from 'react'
 
+// Earthy pastels for the open editor — present but muted
 const EXPANDED_COLORS = [
-  '#fef08a', '#86efac', '#93c5fd', '#f9a8d4', '#c4b5fd', '#fdba74',
+  '#e8dcc8',  // parchment
+  '#c8d4bc',  // sage
+  '#bec8d4',  // river stone
+  '#d8c4bc',  // clay rose
+  '#cac0d4',  // dried lavender
+  '#d4c4a8',  // warm sand
 ]
+// Deeper earthy tones for the top band
 const EXPANDED_BANDS = [
-  '#ca8a04', '#16a34a', '#2563eb', '#db2777', '#7c3aed', '#ea580c',
+  '#9e845a',  // amber brown
+  '#5e8660',  // moss
+  '#5a6e88',  // slate
+  '#885450',  // terracotta
+  '#6a5e7e',  // plum
+  '#8a6a42',  // leather
+]
+// Very faint tints for the grid — each note has its own hue
+const GRID_COLORS = [
+  'rgba(180,156,110, 0.20)',  // parchment
+  'rgba(130,168,122, 0.20)',  // sage
+  'rgba(120,148,175, 0.20)',  // stone
+  'rgba(175,136,128, 0.20)',  // clay
+  'rgba(148,136,175, 0.20)',  // lavender
+  'rgba(175,150,106, 0.20)',  // sand
 ]
 
 interface Note {
@@ -65,7 +86,7 @@ export function Notes() {
             key={i}
             onClick={() => setActiveIdx(i)}
             className="relative overflow-hidden rounded text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:opacity-90 active:scale-95"
-            style={{ backgroundColor: 'rgba(254, 240, 138, 0.38)' }}
+            style={{ backgroundColor: GRID_COLORS[i] }}
           >
             {/* Header fills the whole note */}
             <div className="absolute inset-0 overflow-hidden p-1.5 pb-4 pr-3">
