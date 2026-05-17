@@ -12,6 +12,7 @@ import { Clock } from './Clock'
 import { Trakt } from './Trakt'
 import { Football } from './Football'
 import { Shopping } from './Shopping'
+import { Electricity } from './Electricity'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -108,6 +109,13 @@ export const widgets: WidgetDefinition[] = [
     description: 'Latest releases watchlist',
     component: Trakt,
     color: 'rgba(237, 28, 36, 0.09)',        colorDark: 'rgba(237, 28, 36, 0.18)',
+  },
+  {
+    id: 'electricity',
+    title: 'Electricity',
+    description: 'Spot price today',
+    component: Electricity,
+    color: 'rgba(255, 214, 10, 0.10)',     colorDark: 'rgba(255, 214, 10, 0.16)',
   },
   {
     id: 'football',
