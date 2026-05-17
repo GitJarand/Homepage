@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { timeAgo } from '../lib/time'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ export function YouTube() {
   const [channels, setChannels] = useState<SavedChannel[]>(loadChannels)
   const [watched, setWatched] = useState<Set<string>>(loadWatched)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-youtube')
 
   const handleAdd = useCallback((channel: SavedChannel) => {
     setChannels(prev => {
@@ -274,8 +276,9 @@ export function YouTube() {
           loading={false}
           className="absolute left-0 top-0"
         />
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+      <div className={`flex flex-1 flex-col gap-3 overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         {channels.length === 0 && (
           <p className="py-2 text-center text-xs text-[var(--color-muted-foreground)]">
             No channels added
