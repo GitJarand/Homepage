@@ -446,8 +446,14 @@ export default function Dashboard() {
   const [confirmSaveMain, setConfirmSaveMain] = useState(false)
   const [workMode, setWorkMode] = useState(false)
   const [superMode, setSuperMode] = useState(false)
-  const [logoPos, setLogoPos] = useState({ x: 200, y: 100 })
-  const bounceState = useRef({ x: 200, y: 100, vx: 2.2, vy: 1.6, raf: 0 })
+  const [logoPositions, setLogoPositions] = useState([{ x: 100, y: 200 }, { x: 400, y: 300 }, { x: 700, y: 150 }])
+  const bounceState = useRef([
+    { x: 100, y: 200, vx:  2.2, vy:  1.6 },
+    { x: 400, y: 300, vx: -1.9, vy:  2.1 },
+    { x: 700, y: 150, vx:  1.5, vy: -1.8 },
+  ])
+  const bounceRaf = useRef(0)
+  const headerRef = useRef<HTMLElement>(null)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const [briefcaseMenuOpen, setBriefcaseMenuOpen] = useState(false)
   const briefcaseMenuRef = useRef<HTMLDivElement>(null)
@@ -489,28 +495,35 @@ export default function Dashboard() {
   // Exit super mode when work mode turns off
   useEffect(() => { if (!workMode) setSuperMode(false) }, [workMode])
 
-  // Bouncing DVD logo animation
+  // Bouncing DVD logo animation — 3 logos, top boundary = header bottom edge
   useEffect(() => {
     if (!superMode) return
-    const s = bounceState.current
-    s.x = Math.random() * (window.innerWidth  - BOUNCE_W)
-    s.y = Math.random() * (window.innerHeight - BOUNCE_H)
-    s.vx = (Math.random() > 0.5 ? 1 : -1) * (1.8 + Math.random())
-    s.vy = (Math.random() > 0.5 ? 1 : -1) * (1.4 + Math.random())
+    const logos = bounceState.current
+    // Scatter initial positions across the viewport
+    logos.forEach((s, i) => {
+      s.x  = (window.innerWidth  / 3) * i + Math.random() * 80
+      s.y  = 150 + Math.random() * (window.innerHeight - 300)
+      s.vx = (Math.random() > 0.5 ? 1 : -1) * (1.6 + Math.random() * 0.8)
+      s.vy = (Math.random() > 0.5 ? 1 : -1) * (1.3 + Math.random() * 0.8)
+    })
     function tick() {
-      s.x += s.vx
-      s.y += s.vy
+      const headerH = headerRef.current?.offsetHeight ?? 60
       const maxX = window.innerWidth  - BOUNCE_W
       const maxY = window.innerHeight - BOUNCE_H
-      if (s.x <= 0)    { s.x = 0;    s.vx =  Math.abs(s.vx) }
-      if (s.x >= maxX) { s.x = maxX; s.vx = -Math.abs(s.vx) }
-      if (s.y <= 0)    { s.y = 0;    s.vy =  Math.abs(s.vy) }
-      if (s.y >= maxY) { s.y = maxY; s.vy = -Math.abs(s.vy) }
-      setLogoPos({ x: s.x, y: s.y })
-      s.raf = requestAnimationFrame(tick)
+      const minY = headerH  // collide with the header border
+      logos.forEach(s => {
+        s.x += s.vx
+        s.y += s.vy
+        if (s.x <= 0)    { s.x = 0;    s.vx =  Math.abs(s.vx) }
+        if (s.x >= maxX) { s.x = maxX; s.vx = -Math.abs(s.vx) }
+        if (s.y <= minY) { s.y = minY; s.vy =  Math.abs(s.vy) }
+        if (s.y >= maxY) { s.y = maxY; s.vy = -Math.abs(s.vy) }
+      })
+      setLogoPositions(logos.map(s => ({ x: s.x, y: s.y })))
+      bounceRaf.current = requestAnimationFrame(tick)
     }
-    s.raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(s.raf)
+    bounceRaf.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(bounceRaf.current)
   }, [superMode])
 
   // Close save-main confirm popup on outside click
@@ -600,7 +613,7 @@ export default function Dashboard() {
     <WorkModeContext.Provider value={workMode}>
     <div className="min-h-screen">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
+      <header ref={headerRef} className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
         <div className="relative flex items-center justify-center px-8 py-[15px] pointer-events-auto" style={{ color: 'var(--header-text)' }}>
           {/* Left side */}
           <div className="absolute left-8 flex items-center gap-2" ref={widgetMenuRef}>
@@ -884,20 +897,23 @@ export default function Dashboard() {
         <>
           {/* Full-screen blur — sits below the sticky header (z-10) */}
           <div className="fixed inset-0 z-[9] backdrop-blur-xl" style={{ backgroundColor: 'rgba(0,0,0,0.18)' }} />
-          {/* Bouncing Hypergene logo */}
-          <img
-            src={WORK_LOGO}
-            alt=""
-            className="fixed z-[20] pointer-events-none select-none"
-            style={{
-              left: logoPos.x,
-              top: logoPos.y,
-              width: BOUNCE_W,
-              height: BOUNCE_H,
-              objectFit: 'contain',
-              filter: 'var(--header-logo-filter)',
-            }}
-          />
+          {/* Bouncing Hypergene logos × 3 */}
+          {logoPositions.map((pos, i) => (
+            <img
+              key={i}
+              src={WORK_LOGO}
+              alt=""
+              className="fixed z-[20] pointer-events-none select-none"
+              style={{
+                left: pos.x,
+                top: pos.y,
+                width: BOUNCE_W,
+                height: BOUNCE_H,
+                objectFit: 'contain',
+                filter: 'var(--header-logo-filter)',
+              }}
+            />
+          ))}
         </>
       )}
     </div>
