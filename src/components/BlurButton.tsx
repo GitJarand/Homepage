@@ -24,7 +24,7 @@ function EyeOffIcon() {
  * @param storageKey  e.g. 'homepage:blur-packages'
  * @param onBlur      optional callback fired when transitioning to blurred
  */
-export function useBlur(storageKey: string, onBlur?: () => void): [boolean, () => void] {
+export function useBlur(storageKey: string, onBlur?: (() => void) | null, workBlur = true): [boolean, () => void] {
   const workMode = useWorkMode()
   const [blurred, setBlurred] = useState(() => localStorage.getItem(storageKey) === '1')
   const prevWorkMode = useRef(workMode)
@@ -46,7 +46,7 @@ export function useBlur(storageKey: string, onBlur?: () => void): [boolean, () =
     })
   }
 
-  return [blurred || workMode, toggle]
+  return [blurred || (workBlur ? workMode : false), toggle]
 }
 
 interface BlurButtonProps {

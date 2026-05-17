@@ -702,7 +702,7 @@ export default function Dashboard() {
             </div>
           </div>
           {workMode
-            ? <img src={WORK_LOGO} alt="Hypergene" className="h-8 object-contain" style={{ filter: 'var(--header-logo-filter)' }} />
+            ? <img src={WORK_LOGO} alt="Hypergene" className="h-16 object-contain" style={{ filter: 'var(--header-logo-filter)' }} />
             : <span
                 className="text-[28px] font-semibold tracking-tight leading-none"
                 style={{ color: 'var(--header-text)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}

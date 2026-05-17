@@ -273,7 +273,7 @@ export function PersonalCalendar() {
   const [view, setView] = useState<CalendarView>('day')
   const [date, setDate] = useState(() => new Date())
   const { data, status, error } = useCalendarData(date, view)
-  const [blurred, toggleBlur] = useBlur('homepage:blur-calendar')
+  const [blurred, toggleBlur] = useBlur('homepage:blur-calendar', null, false)
   const workMode = useWorkMode()
 
   const handleDayClick = useCallback((d: Date) => { setDate(d); setView('day') }, [])

@@ -26,7 +26,7 @@ export function Clock() {
   const wrapRef               = useRef<HTMLDivElement>(null)
   const [fs, setFs]           = useState(40)
   const [weather, setWeather] = useState<Weather | null>(null)
-  const [blurred, toggleBlur] = useBlur('homepage:blur-clock')
+  const [blurred, toggleBlur] = useBlur('homepage:blur-clock', null, false)
   const workMode = useWorkMode()
 
   useEffect(() => {
