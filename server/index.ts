@@ -9,6 +9,7 @@ import news from './routes/news'
 import trakt from './routes/trakt'
 import weather from './routes/weather'
 import football from './routes/football'
+import shopping from './routes/shopping'
 
 const app = new Hono()
 app.use('*', cors({ origin: 'http://localhost:5173' }))
@@ -20,6 +21,7 @@ app.route('/api/news', news)
 app.route('/api/trakt', trakt)
 app.route('/api/weather', weather)
 app.route('/api/football', football)
+app.route('/api/shopping', shopping)
 
 app.get('/health', (c) => c.json({ ok: true }))
 

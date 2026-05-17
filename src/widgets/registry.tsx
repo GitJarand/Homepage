@@ -12,6 +12,7 @@ import { News } from './News'
 import { Clock } from './Clock'
 import { Trakt } from './Trakt'
 import { Football } from './Football'
+import { Shopping } from './Shopping'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -115,5 +116,12 @@ export const widgets: WidgetDefinition[] = [
     description: 'Upcoming Premier League, Champions League and Liverpool matches',
     component: Football,
     color: 'rgba(200, 16, 46, 0.08)',        colorDark: 'rgba(200, 16, 46, 0.16)',
+  },
+  {
+    id: 'shopping',
+    title: 'Shopping',
+    description: 'Bring shopping list',
+    component: Shopping,
+    color: 'rgba(255, 149, 0, 0.10)',        colorDark: 'rgba(255, 149, 0, 0.18)',
   },
 ]
