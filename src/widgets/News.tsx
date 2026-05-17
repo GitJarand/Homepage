@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { RefreshButton } from '../components/RefreshButton'
+import { timeAgo } from '../lib/time'
 
 const PAGE = 12
 
@@ -27,15 +29,6 @@ const LOGOS: Record<string, { type: 'img'; url: string } | { type: 'text'; value
   nrk:              { type: 'img',  url: 'https://www.google.com/s2/favicons?domain=nrk.no&sz=64' },
   'reddit-fpl-lfc': { type: 'img+emoji', url: 'https://www.google.com/s2/favicons?domain=reddit.com&sz=64', emoji: '⚽' },
   'tech-gaming':    { type: 'text',      value: '💻🎮' },
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h`
-  return `${Math.floor(hrs / 24)}d`
 }
 
 function loadHidden(source: string, defaultHidden: string[] = []): Set<string> {
@@ -158,17 +151,11 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
                 ? <span className="text-[var(--color-muted-foreground)]"><ListIcon /></span>
                 : <span className="text-3xl leading-none">{logo.value}</span>
         )}
-        <button
+        <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
-          disabled={status === 'loading'}
-          className="absolute left-0 top-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
-          title="Refresh"
-        >
-          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-          </svg>
-        </button>
+          loading={status === 'loading'}
+          className="absolute left-0 top-0"
+        />
         {(allSources || availableSources.length > 1) && (
           <div ref={filterRef} className="absolute right-0 top-0 flex items-center gap-0.5">
             {allSources && (

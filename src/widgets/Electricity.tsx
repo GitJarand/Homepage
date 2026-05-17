@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshButton } from '../components/RefreshButton'
 
 interface HourPrice { hour: number; price: number }
 interface ApiResponse {
@@ -174,16 +175,11 @@ export function Electricity() {
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
 
-        <button
+        <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
-          disabled={status === 'loading'}
-          className="absolute left-0 rounded p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] disabled:opacity-40"
-        >
-          <svg className={status === 'loading' ? 'animate-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-            <path d="M21 3v5h-5"/>
-          </svg>
-        </button>
+          loading={status === 'loading'}
+          className="absolute left-0"
+        />
 
         {hasTomorrow && (
           <div className="absolute right-0 flex gap-1">
