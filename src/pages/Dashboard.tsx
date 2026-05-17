@@ -79,6 +79,7 @@ function MoonIcon() {
 const ORDER_KEY    = 'homepage:widget-order'
 const SIZES_KEY    = 'homepage:widget-sizes'
 const COLS_KEY     = 'homepage:col-widths'
+const LAYOUT1_KEY  = 'homepage:layout1'
 const LAYOUT2_KEY  = 'homepage:layout2'
 const DISABLED_KEY = 'homepage:disabled-widgets'
 
@@ -154,6 +155,13 @@ function saveOrder(ws: OrderedWidget[]) {
 }
 
 interface SavedLayout2 { order: string[]; sizes: Record<string, WidgetSize>; colWidths: number[]; blocks: Block[] }
+
+function loadLayout1(): SavedLayout2 | null {
+  try { return JSON.parse(localStorage.getItem(LAYOUT1_KEY) ?? 'null') } catch { return null }
+}
+function saveLayout1(l: SavedLayout2) {
+  localStorage.setItem(LAYOUT1_KEY, JSON.stringify(l))
+}
 
 function loadLayout2(): SavedLayout2 | null {
   try { return JSON.parse(localStorage.getItem(LAYOUT2_KEY) ?? 'null') } catch { return null }
@@ -421,6 +429,7 @@ export default function Dashboard() {
   const [scrollLocked, setScrollLocked] = useState(true)
   const [layout2, setLayout2] = useState<SavedLayout2 | null>(loadLayout2)
   const [disabled, setDisabled] = useState<Set<string>>(loadDisabled)
+  const [layout1, setLayout1] = useState<SavedLayout2 | null>(loadLayout1)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
@@ -638,12 +647,43 @@ export default function Dashboard() {
                 </button>
               )}
               <button
-                onClick={() => applyPreset(MAIN_LAYOUT)}
+                onClick={() => {
+                  const snapshot: SavedLayout2 = {
+                    order: ordered.map(w => w.id),
+                    sizes: { ...sizes },
+                    colWidths: [...colWidths],
+                    blocks: [...blocks],
+                  }
+                  saveLayout1(snapshot)
+                  setLayout1(snapshot)
+                }}
+                className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title="Save as main layout"
+              >
+                <SaveIcon />
+              </button>
+              <button
+                onClick={() => {
+                  const l = layout1
+                  if (l) {
+                    const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+                    setOrdered(newOrder)
+                    setSizes(l.sizes)
+                    setColWidths(l.colWidths)
+                    saveOrder(newOrder)
+                    saveSizes(l.sizes)
+                    saveColWidths(l.colWidths)
+                  } else {
+                    applyPreset(MAIN_LAYOUT)
+                  }
+                }}
+                onContextMenu={layout1 ? e => { e.preventDefault(); setLayout1(null); localStorage.removeItem(LAYOUT1_KEY) } : undefined}
                 className="rounded p-0.5 opacity-50 hover:opacity-100 transition-opacity"
                 style={{ color: 'var(--header-text)' }}
-                title="Default layout"
+                title={layout1 ? 'Main layout — right-click to reset' : 'Default layout'}
               >
-                <LayoutPreviewIcon blocks={MAIN_LAYOUT.blocks} />
+                <LayoutPreviewIcon blocks={layout1 ? layout1.blocks : MAIN_LAYOUT.blocks} />
               </button>
             </div>
             <button
