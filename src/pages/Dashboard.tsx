@@ -455,8 +455,6 @@ export default function Dashboard() {
   const bounceRaf = useRef(0)
   const headerRef = useRef<HTMLElement>(null)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
-  const [briefcaseMenuOpen, setBriefcaseMenuOpen] = useState(false)
-  const briefcaseMenuRef = useRef<HTMLDivElement>(null)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
   const orderedVisible = useMemo(() => ordered.filter(w => !disabled.has(w.id)), [ordered, disabled])
@@ -480,17 +478,6 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [widgetMenuOpen])
-
-  // Close briefcase menu on outside click
-  useLayoutEffect(() => {
-    if (!briefcaseMenuOpen) return
-    function handler(e: MouseEvent) {
-      if (briefcaseMenuRef.current && !briefcaseMenuRef.current.contains(e.target as Node))
-        setBriefcaseMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [briefcaseMenuOpen])
 
   // Exit super mode when work mode turns off
   useEffect(() => { if (!workMode) setSuperMode(false) }, [workMode])
@@ -736,51 +723,15 @@ export default function Dashboard() {
             >
               {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
-            <div className="relative" ref={briefcaseMenuRef}>
-              <button
-                onClick={() => setBriefcaseMenuOpen(o => !o)}
-                className="rounded-full p-1.5 transition-colors"
-                style={{ color: superMode ? '#ff3b30' : 'var(--header-text)', opacity: workMode || superMode ? 1 : 0.5 }}
-                title="Work mode"
-              >
-                <BriefcaseIcon />
-              </button>
-              {briefcaseMenuOpen && (
-                <div
-                  className="absolute right-0 top-full mt-2 z-50 min-w-[160px] rounded-xl border border-[var(--card-border)] py-1.5 shadow-lg"
-                  style={{ backgroundColor: 'var(--popover-bg)', backdropFilter: 'blur(16px)' }}
-                >
-                  <button
-                    onClick={() => {
-                      if (superMode) setSuperMode(false)
-                      setWorkMode(m => !m)
-                      setBriefcaseMenuOpen(false)
-                    }}
-                    className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-[var(--color-muted)]"
-                    style={{ color: 'var(--color-foreground)' }}
-                  >
-                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${workMode ? 'border-[var(--color-foreground)] bg-[var(--color-foreground)]' : 'border-[var(--color-border)] bg-transparent'}`}>
-                      {workMode && <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="var(--card-bg)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 4.5l2 2 4-4"/></svg>}
-                    </span>
-                    Work mode
-                  </button>
-                  <button
-                    onClick={() => {
-                      setWorkMode(true)
-                      setSuperMode(m => !m)
-                      setBriefcaseMenuOpen(false)
-                    }}
-                    className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-[var(--color-muted)]"
-                    style={{ color: superMode ? '#ff3b30' : 'var(--color-foreground)' }}
-                  >
-                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${superMode ? 'border-[#ff3b30] bg-[#ff3b30]' : 'border-[var(--color-border)] bg-transparent'}`}>
-                      {superMode && <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1.5 4.5l2 2 4-4"/></svg>}
-                    </span>
-                    Super mode
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => { setSuperMode(false); setWorkMode(m => !m) }}
+              onContextMenu={e => { e.preventDefault(); setWorkMode(true); setSuperMode(m => !m) }}
+              className="rounded-full p-1.5 transition-colors"
+              style={{ color: superMode ? '#ff3b30' : 'var(--header-text)', opacity: workMode || superMode ? 1 : 0.5 }}
+              title={superMode ? 'Click to turn off · right-click to exit super mode' : workMode ? 'Click to turn off · right-click for super mode' : 'Click for work mode · right-click for super mode'}
+            >
+              <BriefcaseIcon />
+            </button>
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 <button
