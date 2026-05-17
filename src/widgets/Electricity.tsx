@@ -19,6 +19,18 @@ function priceColor(price: number, min: number, max: number): string {
 
 function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour: number }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [svgSize, setSvgSize] = useState({ w: 400, h: 100 })
+
+  useEffect(() => {
+    if (!svgRef.current) return
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) setSvgSize({ w: width, h: height })
+    })
+    ro.observe(svgRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   if (!prices.length) return null
 
   const W = 400
@@ -26,6 +38,10 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
   const PAD = { top: 8, right: 4, bottom: 18, left: 28 }
   const chartW = W - PAD.left - PAD.right
   const chartH = H - PAD.top - PAD.bottom
+
+  // Counter-scale so text renders at natural pixel size despite preserveAspectRatio="none"
+  const tx = W / svgSize.w
+  const ty = H / svgSize.h
 
   const min   = Math.min(...prices.map(p => p.price))
   const max   = Math.max(...prices.map(p => p.price))
@@ -82,9 +98,9 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
             className="text-[var(--color-foreground)]"
           />
           <text
-            x={PAD.left - 4} y={y(val)}
+            transform={`translate(${PAD.left - 4},${y(val)}) scale(${tx},${ty})`}
             textAnchor="end" dominantBaseline="middle"
-            fontSize="7" fill="currentColor" fillOpacity="0.35"
+            fontSize="9" fill="currentColor" fillOpacity="0.55"
             className="text-[var(--color-foreground)]"
           >
             {Math.round(val)}
@@ -133,9 +149,9 @@ function PriceGraph({ prices, currentHour }: { prices: HourPrice[]; currentHour:
         return (
           <text
             key={h}
-            x={pt.px} y={H - 3}
+            transform={`translate(${pt.px},${H - 3}) scale(${tx},${ty})`}
             textAnchor="middle"
-            fontSize="7" fill="currentColor" fillOpacity="0.35"
+            fontSize="9" fill="currentColor" fillOpacity="0.55"
             className="text-[var(--color-foreground)]"
           >
             {String(h).padStart(2, '0')}
@@ -203,10 +219,7 @@ export function Electricity() {
       {/* Current price */}
       {status === 'ok' && current && !showTomorrow && (
         <div className="mb-2 flex items-baseline justify-center gap-1">
-          <span
-            className="text-[36px] font-semibold tabular-nums leading-none"
-            style={{ color: priceColor(current.price, min, max) }}
-          >
+          <span className="text-[36px] font-semibold tabular-nums leading-none text-[var(--color-foreground)]">
             {current.price.toFixed(1)}
           </span>
           <span className="text-[12px] text-[var(--color-muted-foreground)]">øre/kWh</span>
