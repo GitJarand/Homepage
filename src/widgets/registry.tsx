@@ -2,7 +2,6 @@ import type { WidgetDefinition } from './types'
 
 export type OrderedWidget = WidgetDefinition
 import { PersonalCalendar } from './PersonalCalendar'
-import { WorkCalendar } from './WorkCalendar'
 import { Notes } from './Notes'
 import { Visual } from './Visual'
 import { Packages } from './Packages'
@@ -24,11 +23,11 @@ export const widgets: WidgetDefinition[] = [
     color: 'rgba(0, 122, 255, 0.13)',       colorDark: 'rgba(0, 122, 255, 0.22)',
   },
   {
-    id: 'work-calendar',
-    title: 'Work Calendar',
-    description: 'Upcoming work meetings and events',
-    component: WorkCalendar,
-    color: 'rgba(52, 199, 89, 0.13)',        colorDark: 'rgba(52, 199, 89, 0.20)',
+    id: 'shopping',
+    title: 'Shopping',
+    description: 'Bring shopping list',
+    component: Shopping,
+    color: 'rgba(255, 149, 0, 0.10)',        colorDark: 'rgba(255, 149, 0, 0.18)',
   },
   {
     id: 'notes',
@@ -116,12 +115,5 @@ export const widgets: WidgetDefinition[] = [
     description: 'Upcoming Premier League, Champions League and Liverpool matches',
     component: Football,
     color: 'rgba(200, 16, 46, 0.08)',        colorDark: 'rgba(200, 16, 46, 0.16)',
-  },
-  {
-    id: 'shopping',
-    title: 'Shopping',
-    description: 'Bring shopping list',
-    component: Shopping,
-    color: 'rgba(255, 149, 0, 0.10)',        colorDark: 'rgba(255, 149, 0, 0.18)',
   },
 ]

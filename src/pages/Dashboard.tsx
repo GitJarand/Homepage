@@ -69,7 +69,7 @@ const MAIN_LAYOUT: LayoutPreset = {
   colWidths: Array(NUM_COLS).fill(1),
   sizes: { youtube: { colSpan: 2 as ColSpan, rowSpan: 2 as RowSpan } },
   order: [
-    'personal-calendar', 'work-calendar', 'notes', 'visual', 'packages', 'clock',
+    'personal-calendar', 'shopping', 'notes', 'visual', 'packages', 'clock',
     'news-nrk', 'news-vg', 'youtube', 'rss-feed-1', 'rss-feed-2',
     'trakt', 'football',
   ],
