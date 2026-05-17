@@ -276,12 +276,10 @@ export function YouTube() {
               <polygon points="14,7 27,12.5 14,18" fill="white"/>
             </svg>
         }
-        <RefreshButton
-          onClick={() => setRefreshKey(k => k + 1)}
-          loading={false}
-          className="absolute left-0 top-0"
-        />
-        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
+        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+          <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={false} />
+          <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
       </div>
       <div className={`flex flex-1 flex-col gap-3 overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         {channels.length === 0 && (

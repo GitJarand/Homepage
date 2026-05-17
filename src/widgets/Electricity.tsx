@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { getCoords } from '../lib/geolocation'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 const ZONE_NAMES: Record<string, string> = {
   NO1: 'Oslo',
@@ -177,6 +178,7 @@ export function Electricity() {
   const [status, setStatus] = useState<'loading' | 'error' | 'ok'>('loading')
   const [showTomorrow, setShowTomorrow] = useState(false)
   const [refreshKey, setRefreshKey]     = useState(0)
+  const [blurred, toggleBlur]           = useBlur('homepage:blur-electricity')
 
   useEffect(() => {
     setStatus('loading')
@@ -206,11 +208,10 @@ export function Electricity() {
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
 
-        <RefreshButton
-          onClick={() => setRefreshKey(k => k + 1)}
-          loading={status === 'loading'}
-          className="absolute left-0"
-        />
+        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+          <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
+          <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
 
         {hasTomorrow && (
           <div className="absolute right-0 flex gap-1">
@@ -231,6 +232,7 @@ export function Electricity() {
         )}
       </div>
 
+      <div className={`flex flex-1 flex-col transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
       {/* Current price */}
       {status === 'ok' && current && !showTomorrow && (
         <div className="mb-1 flex items-baseline justify-center gap-1">
@@ -259,6 +261,7 @@ export function Electricity() {
           <span style={{ color: '#ff3b30' }}>↑ {max.toFixed(1)} øre</span>
         </div>
       )}
+      </div>
     </div>
   )
 }

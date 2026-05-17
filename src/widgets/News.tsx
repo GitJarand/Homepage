@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { timeAgo } from '../lib/time'
 import { useWorkMode, WORK_LOGO } from '../lib/workMode'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 const PAGE = 12
 
@@ -53,6 +54,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
   const [refreshKey, setRefreshKey] = useState(0)
   const [visibleCount, setVisibleCount] = useState(PAGE)
   const [sort, setSort] = useState<'hot' | 'new'>('hot')
+  const [blurred, toggleBlur] = useBlur(`homepage:blur-news-${source}`)
   const filterRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -155,11 +157,10 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
                   ? <span className="text-[var(--color-muted-foreground)]"><ListIcon /></span>
                   : <span className="text-3xl leading-none">{logo.value}</span>
           )}
-        <RefreshButton
-          onClick={() => setRefreshKey(k => k + 1)}
-          loading={status === 'loading'}
-          className="absolute left-0 top-0"
-        />
+        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+          <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
+          <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
         {(allSources || availableSources.length > 1) && (
           <div ref={filterRef} className="absolute right-0 top-0 flex items-center gap-0.5">
             {allSources && (
@@ -225,6 +226,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
         )}
       </div>
 
+      <div className={`flex flex-1 flex-col overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
       {status === 'loading' && (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -279,6 +281,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
           {hasMore && <div ref={sentinelRef} className="h-4 shrink-0" />}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { WidgetDataState } from './types'
+import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -271,6 +273,8 @@ export function PersonalCalendar() {
   const [view, setView] = useState<CalendarView>('day')
   const [date, setDate] = useState(() => new Date())
   const { data, status, error } = useCalendarData(date, view)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-calendar')
+  const workMode = useWorkMode()
 
   const handleDayClick = useCallback((d: Date) => { setDate(d); setView('day') }, [])
   const handlePrev = useCallback(() => setDate((d) => navigate(d, view, -1)), [view])
@@ -279,12 +283,16 @@ export function PersonalCalendar() {
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-2 pt-3">
       {/* Logo header */}
-      <div className="mb-2 flex shrink-0 flex-col items-center pb-2">
-        <span className="text-3xl leading-none">📅</span>
+      <div className="relative mb-2 flex shrink-0 flex-col items-center pb-2">
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          : <span className="text-3xl leading-none">📅</span>
+        }
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className={`flex-1 min-h-0 overflow-hidden transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         {status === 'loading' && (
           <div className="flex h-32 items-center justify-center">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-muted-foreground)]" />
@@ -303,7 +311,7 @@ export function PersonalCalendar() {
       </div>
 
       {/* Nav bar */}
-      <div className="mt-1 flex shrink-0 items-center justify-between">
+      <div className={`mt-1 flex shrink-0 items-center justify-between transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrev}

@@ -79,7 +79,7 @@ export function Notes() {
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         <span className="text-2xl leading-none">📝</span>
-        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
       </div>
 
       {/* 3×2 post-it grid */}

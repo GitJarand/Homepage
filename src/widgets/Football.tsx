@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 type Mode = 'pl' | 'cl' | 'lfc'
 
@@ -54,6 +55,7 @@ export function Football() {
   const [status, setStatus]   = useState<'loading' | 'error' | 'ok'>('loading')
   const [error, setError]     = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-football')
 
   useEffect(() => {
     setStatus('loading')
@@ -81,12 +83,10 @@ export function Football() {
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         <img src={CRESTS[mode]} alt={LABELS[mode]} className={`h-10 w-10 object-contain ${DARK_INVERT[mode] ? 'dark:brightness-0 dark:invert' : ''}`} />
 
-        {/* Refresh */}
-        <RefreshButton
-          onClick={() => setRefreshKey(k => k + 1)}
-          loading={status === 'loading'}
-          className="absolute left-0 top-0"
-        />
+        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+          <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
+          <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
 
         {/* Mode switcher */}
         <div className="absolute right-0 top-0 flex items-center gap-1">
@@ -104,6 +104,7 @@ export function Football() {
         </div>
       </div>
 
+      <div className={`flex flex-1 flex-col overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
       {/* Round label */}
       {roundLabel && status === 'ok' && (
         <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
@@ -175,6 +176,7 @@ export function Football() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }
