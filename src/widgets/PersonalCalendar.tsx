@@ -142,7 +142,7 @@ function DayView({ events }: { events: CalendarEvent[] }) {
     return <p className="py-6 text-center text-xs text-[var(--color-muted-foreground)]">No events</p>
   }
   return (
-    <ul className="max-h-52 space-y-2 overflow-y-auto pr-1">
+    <ul className="space-y-2 pr-1">
       {events.map((e) => (
         <li key={e.id} className="flex items-start gap-2">
           <span
@@ -231,7 +231,7 @@ function MonthView({ date, events, onDayClick }: {
           <p key={i} className="text-center text-[10px] text-[var(--color-muted-foreground)]">{d}</p>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className="grid grid-cols-7 gap-y-0">
         {Array.from({ length: cells }, (_, i) => {
           const offset = i - startPad
           if (offset < 0 || offset >= totalDays) return <div key={i} />
@@ -242,17 +242,17 @@ function MonthView({ date, events, onDayClick }: {
             <button
               key={i}
               onClick={() => onDayClick(day)}
-              className="flex flex-col items-center gap-0.5 rounded p-0.5 hover:bg-[var(--color-muted)]"
+              className="flex flex-col items-center gap-0 rounded p-0 hover:bg-[var(--color-muted)]"
             >
               <span
                 className={cn(
-                  'flex h-5 w-5 items-center justify-center rounded-full text-[10px]',
+                  'flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px]',
                   isToday ? 'bg-[#007AFF] font-semibold text-white' : 'text-[var(--color-foreground)]',
                 )}
               >
                 {day.getDate()}
               </span>
-              <div className="flex min-h-[6px] gap-0.5">
+              <div className="flex h-[4px] gap-0.5">
                 {dayEvents.slice(0, 2).map((e) => (
                   <Dot key={e.id} color={calendarColor(e.calendar)} />
                 ))}
@@ -279,12 +279,12 @@ export function PersonalCalendar() {
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-2 pt-3">
       {/* Logo header */}
-      <div className="mb-3 flex shrink-0 flex-col items-center pb-3">
+      <div className="mb-2 flex shrink-0 flex-col items-center pb-2">
         <span className="text-3xl leading-none">📅</span>
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {status === 'loading' && (
           <div className="flex h-32 items-center justify-center">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-muted-foreground)]" />
