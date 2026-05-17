@@ -63,11 +63,11 @@ export function Clock() {
   // All sizes derived from fs so they scale together
   const datefs        = Math.max(9,  Math.round(fs * 0.22))
   const locationfs    = Math.max(9,  Math.round(fs * 0.20))
-  const iconfs        = Math.max(20, Math.round(fs * 0.70))   // big current-weather icon
-  const tempfs        = Math.max(10, Math.round(fs * 0.28))
-  const forecastDayfs = Math.max(8,  Math.round(fs * 0.17))
-  const forecastIconfs= Math.max(14, Math.round(fs * 0.38))
-  const forecastTempfs= Math.max(8,  Math.round(fs * 0.18))
+  const iconfs        = Math.max(14, Math.round(fs * 0.45))
+  const tempfs        = Math.max(9,  Math.round(fs * 0.20))
+  const forecastDayfs = Math.max(7,  Math.round(fs * 0.14))
+  const forecastIconfs= Math.max(11, Math.round(fs * 0.26))
+  const forecastTempfs= Math.max(7,  Math.round(fs * 0.14))
 
   return (
     <div ref={wrapRef} className="flex h-full flex-col px-3 pt-2 pb-2.5">
@@ -114,7 +114,7 @@ export function Clock() {
 
       {/* ── 3-day forecast ── */}
       {weather && weather.forecast.length > 0 && (
-        <div className="flex justify-around border-t border-black/10 pt-2">
+        <div className="flex justify-around pt-1">
           {weather.forecast.map(f => (
             <div key={f.day} className="flex flex-col items-center gap-0.5">
               <span className="font-medium uppercase tracking-wide text-black/35" style={{ fontSize: forecastDayfs }}>
