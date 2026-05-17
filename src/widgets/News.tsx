@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { timeAgo } from '../lib/time'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 const PAGE = 12
 
@@ -138,19 +139,22 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
   }
 
   const logo = LOGOS[source]
+  const workMode = useWorkMode()
 
   return (
     <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        {logo && (
-          logo.type === 'img'
-            ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
-            : logo.type === 'img+emoji'
-              ? <div className="flex items-center gap-1"><img src={logo.url} alt="" className="h-8 w-8 object-contain" /><span className="text-xl leading-none">{logo.emoji}</span></div>
-              : logo.type === 'icon'
-                ? <span className="text-[var(--color-muted-foreground)]"><ListIcon /></span>
-                : <span className="text-3xl leading-none">{logo.value}</span>
-        )}
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          : logo && (
+            logo.type === 'img'
+              ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
+              : logo.type === 'img+emoji'
+                ? <div className="flex items-center gap-1"><img src={logo.url} alt="" className="h-8 w-8 object-contain" /><span className="text-xl leading-none">{logo.emoji}</span></div>
+                : logo.type === 'icon'
+                  ? <span className="text-[var(--color-muted-foreground)]"><ListIcon /></span>
+                  : <span className="text-3xl leading-none">{logo.value}</span>
+          )}
         <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
           loading={status === 'loading'}

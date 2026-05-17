@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { timeAgo } from '../lib/time'
 import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -238,6 +239,7 @@ export function YouTube() {
   const [watched, setWatched] = useState<Set<string>>(loadWatched)
   const [refreshKey, setRefreshKey] = useState(0)
   const [blurred, toggleBlur] = useBlur('homepage:blur-youtube')
+  const workMode = useWorkMode()
 
   const handleAdd = useCallback((channel: SavedChannel) => {
     setChannels(prev => {
@@ -267,10 +269,13 @@ export function YouTube() {
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <svg width="36" height="25" viewBox="0 0 36 25" fill="none">
-          <rect width="36" height="25" rx="5" fill="#FF0000"/>
-          <polygon points="14,7 27,12.5 14,18" fill="white"/>
-        </svg>
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          : <svg width="36" height="25" viewBox="0 0 36 25" fill="none">
+              <rect width="36" height="25" rx="5" fill="#FF0000"/>
+              <polygon points="14,7 27,12.5 14,18" fill="white"/>
+            </svg>
+        }
         <RefreshButton
           onClick={() => setRefreshKey(k => k + 1)}
           loading={false}

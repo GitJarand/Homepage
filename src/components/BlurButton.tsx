@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useWorkMode } from '../lib/workMode'
 
 function EyeIcon() {
   return (
@@ -24,6 +25,7 @@ function EyeOffIcon() {
  * @param onBlur      optional callback fired when transitioning to blurred
  */
 export function useBlur(storageKey: string, onBlur?: () => void): [boolean, () => void] {
+  const workMode = useWorkMode()
   const [blurred, setBlurred] = useState(() => localStorage.getItem(storageKey) === '1')
 
   function toggle() {
@@ -34,7 +36,7 @@ export function useBlur(storageKey: string, onBlur?: () => void): [boolean, () =
     })
   }
 
-  return [blurred, toggle]
+  return [blurred || workMode, toggle]
 }
 
 interface BlurButtonProps {

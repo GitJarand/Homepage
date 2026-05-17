@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { widgets, type OrderedWidget } from '@/widgets/registry'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
+import { WorkModeContext } from '@/lib/workMode'
 
 function SunIcon() {
   return (
@@ -62,6 +63,15 @@ function WidgetsIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
       <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  )
+}
+
+function BriefcaseIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
     </svg>
   )
 }
@@ -431,6 +441,7 @@ export default function Dashboard() {
   const [disabled, setDisabled] = useState<Set<string>>(loadDisabled)
   const [layout1, setLayout1] = useState<SavedLayout2 | null>(loadLayout1)
   const [confirmSaveMain, setConfirmSaveMain] = useState(false)
+  const [workMode, setWorkMode] = useState(false)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
@@ -540,6 +551,7 @@ export default function Dashboard() {
   }
 
   return (
+    <WorkModeContext.Provider value={workMode}>
     <div className="min-h-screen">
       {/* Nav bar */}
       <header className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
@@ -721,6 +733,14 @@ export default function Dashboard() {
               </button>
             </div>
             <button
+              onClick={() => setWorkMode(m => !m)}
+              className="rounded-full p-1.5 transition-opacity"
+              style={{ color: 'var(--header-text)', opacity: workMode ? 1 : 0.5 }}
+              title={workMode ? 'Exit work mode' : 'Work mode'}
+            >
+              <BriefcaseIcon />
+            </button>
+            <button
               onClick={toggle}
               className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
               style={{ color: 'var(--header-text)' }}
@@ -773,5 +793,6 @@ export default function Dashboard() {
         </DndContext>
       </main>
     </div>
+    </WorkModeContext.Provider>
   )
 }
