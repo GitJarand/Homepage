@@ -259,7 +259,7 @@ export function Packages() {
     <div className="flex h-full flex-col bg-transparent px-4 pb-4 pt-3">
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         <div className="text-3xl leading-none">📦</div>
-        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
       </div>
       <div className={cn('flex flex-1 flex-col gap-2 overflow-y-auto transition-[filter] duration-200', blurred && 'blur-sm select-none pointer-events-none')}>
         {entries.length === 0 && (

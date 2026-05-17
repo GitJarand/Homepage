@@ -53,15 +53,10 @@ export function Shopping() {
           className="h-8 w-8 object-contain"
         />
 
-        {/* Refresh */}
-        <RefreshButton
-          onClick={() => setRefreshKey(k => k + 1)}
-          loading={status === 'loading'}
-          className="absolute left-0 top-0"
-        />
-
-        {/* Blur toggle */}
-        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
+        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+          <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
+          <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
       </div>
 
       <div className={`flex flex-1 flex-col gap-2 transition-[filter] duration-200 overflow-hidden ${blurred ? 'blur-sm select-none pointer-events-none' : ''}`}>

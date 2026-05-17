@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getCoords } from '../lib/geolocation'
+import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
@@ -24,6 +26,8 @@ export function Clock() {
   const wrapRef               = useRef<HTMLDivElement>(null)
   const [fs, setFs]           = useState(40)
   const [weather, setWeather] = useState<Weather | null>(null)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-clock')
+  const workMode = useWorkMode()
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -70,7 +74,20 @@ export function Clock() {
   return (
     <div ref={wrapRef} className="flex h-full flex-col px-3 pt-2 pb-2.5">
 
+      {/* ── Widget header: icon + blur toggle ── */}
+      <div className="relative mb-2 flex shrink-0 flex-col items-center pb-2">
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-black/50 dark:text-white/50">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        }
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
+      </div>
+
       {/* ── Top row: location (left) + current weather (right) ── */}
+      <div className={`flex flex-1 flex-col transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-1 text-black/40 dark:text-white/40">
           <svg width={locationfs} height={locationfs} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -127,6 +144,7 @@ export function Clock() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -655,16 +655,19 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <span
-            className="text-[28px] font-semibold tracking-tight leading-none"
-            style={{ color: 'var(--header-text)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            {(() => {
-              const h = new Date().getHours()
-              const period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
-              return `Good ${period}, Jarand`
-            })()}
-          </span>
+          {workMode
+            ? <img src="https://ik.imagekit.io/businesswith/tr:w-200,h-100,cm-pad_resize,dpr-2/logo/hypergene-logo.png" alt="Hypergene" className="h-8 object-contain" style={{ filter: 'var(--header-logo-filter)' }} />
+            : <span
+                className="text-[28px] font-semibold tracking-tight leading-none"
+                style={{ color: 'var(--header-text)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                {(() => {
+                  const h = new Date().getHours()
+                  const period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+                  return `Good ${period}, Jarand`
+                })()}
+              </span>
+          }
           <div className="absolute right-8 flex items-center gap-3">
             <button
               onClick={toggle}
