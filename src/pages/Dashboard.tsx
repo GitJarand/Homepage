@@ -549,6 +549,26 @@ export default function Dashboard() {
             >
               <LayoutPreviewIcon blocks={blocks} />
             </button>
+            {layout2 && (
+              <button
+                onClick={() => {
+                  const l = layout2
+                  const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+                  setOrdered(newOrder)
+                  setSizes(l.sizes)
+                  setColWidths(l.colWidths)
+                  saveOrder(newOrder)
+                  saveSizes(l.sizes)
+                  saveColWidths(l.colWidths)
+                }}
+                onContextMenu={e => { e.preventDefault(); setLayout2(null); localStorage.removeItem(LAYOUT2_KEY) }}
+                className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title="Saved layout 2 — right-click to delete"
+              >
+                <LayoutPreviewIcon blocks={layout2.blocks} />
+              </button>
+            )}
             <button
               onClick={() => {
                 const snapshot: SavedLayout2 = {
@@ -562,7 +582,7 @@ export default function Dashboard() {
               }}
               className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
               style={{ color: 'var(--header-text)' }}
-              title="Save current layout as default 2"
+              title="Save current layout as layout 2"
             >
               <SaveIcon />
             </button>
@@ -626,26 +646,6 @@ export default function Dashboard() {
           </span>
           <div className="absolute right-8 flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              {layout2 && (
-                <button
-                  onClick={() => {
-                    const l = layout2
-                    const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
-                    setOrdered(newOrder)
-                    setSizes(l.sizes)
-                    setColWidths(l.colWidths)
-                    saveOrder(newOrder)
-                    saveSizes(l.sizes)
-                    saveColWidths(l.colWidths)
-                  }}
-                  onContextMenu={e => { e.preventDefault(); setLayout2(null); localStorage.removeItem(LAYOUT2_KEY) }}
-                  className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
-                  style={{ color: 'var(--header-text)' }}
-                  title="Saved layout — right-click to delete"
-                >
-                  <LayoutPreviewIcon blocks={layout2.blocks} />
-                </button>
-              )}
               <button
                 onClick={() => {
                   const snapshot: SavedLayout2 = {
