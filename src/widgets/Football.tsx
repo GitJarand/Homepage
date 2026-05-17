@@ -44,14 +44,18 @@ export function Football() {
   const [mode, setMode]       = useState<Mode>('pl')
   const [data, setData]       = useState<Response | null>(null)
   const [status, setStatus]   = useState<'loading' | 'error' | 'ok'>('loading')
+  const [error, setError]     = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     setStatus('loading')
     fetch(`/api/football/next?mode=${mode}`)
       .then(r => r.json() as Promise<Response>)
-      .then(d => { if (d.error) { setStatus('error'); return } setData(d); setStatus('ok') })
-      .catch(() => setStatus('error'))
+      .then(d => {
+        if (d.error) { setError(d.error); setStatus('error'); return }
+        setData(d); setStatus('ok')
+      })
+      .catch((e: Error) => { setError(e.message); setStatus('error') })
   }, [mode, refreshKey])
 
   const matches = data?.matches ?? []
@@ -122,7 +126,7 @@ export function Football() {
 
       {/* Error */}
       {status === 'error' && (
-        <p className="text-sm text-red-400">Failed to load matches.</p>
+        <p className="text-sm text-red-400">{error ?? 'Failed to load matches.'}</p>
       )}
 
       {/* Match list */}
