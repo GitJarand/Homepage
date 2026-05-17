@@ -1,8 +1,7 @@
 {
-  "buildCommand": "vite build && npx esbuild server/vercel-handler.ts --bundle --packages=external --platform=node --format=esm --outfile=api/index.js",
+  "buildCommand": "vite build && npx esbuild server/vercel-handler.ts --bundle --packages=external --platform=node --format=esm --outfile=api/_handler.js && mv api/_handler.js \"api/[...slug].js\"",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
