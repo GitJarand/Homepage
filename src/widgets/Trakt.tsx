@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
+import { BlurButton, useBlur } from '../components/BlurButton'
 
 interface MediaItem {
   type: 'movie' | 'show'
@@ -16,6 +17,7 @@ export function Trakt() {
   const [status, setStatus] = useState<'loading' | 'error' | 'ok'>('loading')
   const [error, setError]   = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [blurred, toggleBlur] = useBlur('homepage:blur-trakt')
 
   useEffect(() => {
     setStatus('loading')
@@ -43,8 +45,10 @@ export function Trakt() {
           loading={status === 'loading'}
           className="absolute left-0 top-0"
         />
+        <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute right-0 top-0" />
       </div>
 
+      <div className={`flex flex-1 flex-col transition-[filter] duration-200 overflow-hidden${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
       {status === 'loading' && (
         <div className="flex flex-col gap-2.5">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -102,6 +106,7 @@ export function Trakt() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }
