@@ -22,6 +22,11 @@
   --card-border: rgba(0, 0, 0, 0.09);
   --header-bg: rgba(242, 242, 247, 0.92);
   --header-border: rgba(0, 0, 0, 0.08);
+  --header-gradient-from: #ffffff;
+  --header-gradient-to: rgba(242, 242, 247, 0);
+  --header-surface: #000000;
+  --header-surface-border: rgba(0, 0, 0, 0);
+  --header-text: #ffffff;
 }
 
 :root.dark {
@@ -36,6 +41,11 @@
   --card-border: rgba(255, 255, 255, 0.09);
   --header-bg: rgba(17, 17, 16, 0.90);
   --header-border: rgba(255, 255, 255, 0.07);
+  --header-gradient-from: rgba(255, 255, 255, 0.06);
+  --header-gradient-to: rgba(17, 17, 16, 0);
+  --header-surface: #ffffff;
+  --header-surface-border: rgba(255, 255, 255, 0.12);
+  --header-text: #000000;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +61,11 @@
     --card-border: rgba(255, 255, 255, 0.09);
     --header-bg: rgba(17, 17, 16, 0.90);
     --header-border: rgba(255, 255, 255, 0.07);
+    --header-gradient-from: rgba(255, 255, 255, 0.06);
+    --header-gradient-to: rgba(17, 17, 16, 0);
+    --header-surface: #ffffff;
+    --header-surface-border: rgba(255, 255, 255, 0.12);
+    --header-text: #000000;
   }
 }
 

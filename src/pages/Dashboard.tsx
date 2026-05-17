@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -29,6 +29,43 @@ function SunIcon() {
   )
 }
 
+function SaveIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+      <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+      <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+    </svg>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  )
+}
+
+function UnlockIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+    </svg>
+  )
+}
+
+function WidgetsIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  )
+}
+
 function MoonIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -39,9 +76,19 @@ function MoonIcon() {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-const ORDER_KEY = 'homepage:widget-order'
-const SIZES_KEY = 'homepage:widget-sizes'
-const COLS_KEY  = 'homepage:col-widths'
+const ORDER_KEY    = 'homepage:widget-order'
+const SIZES_KEY    = 'homepage:widget-sizes'
+const COLS_KEY     = 'homepage:col-widths'
+const LAYOUT2_KEY  = 'homepage:layout2'
+const DISABLED_KEY = 'homepage:disabled-widgets'
+
+function loadDisabled(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(DISABLED_KEY) ?? '[]') as string[]) }
+  catch { return new Set() }
+}
+function saveDisabled(s: Set<string>) {
+  localStorage.setItem(DISABLED_KEY, JSON.stringify([...s]))
+}
 
 const NUM_COLS = 6
 const NUM_ROWS = 4
@@ -104,6 +151,15 @@ function loadOrder(defaults: OrderedWidget[]): OrderedWidget[] {
 }
 function saveOrder(ws: OrderedWidget[]) {
   localStorage.setItem(ORDER_KEY, JSON.stringify(ws.map((w) => w.id)))
+}
+
+interface SavedLayout2 { order: string[]; sizes: Record<string, WidgetSize>; colWidths: number[]; blocks: Block[] }
+
+function loadLayout2(): SavedLayout2 | null {
+  try { return JSON.parse(localStorage.getItem(LAYOUT2_KEY) ?? 'null') } catch { return null }
+}
+function saveLayout2(l: SavedLayout2) {
+  localStorage.setItem(LAYOUT2_KEY, JSON.stringify(l))
 }
 
 function loadColWidths(): number[] {
@@ -302,10 +358,12 @@ function SortableCard({
   widget,
   block,
   onResize,
+  onDisable,
 }: {
   widget: OrderedWidget
   block: Block
   onResize: (dCol: number, dRow: number) => void
+  onDisable: () => void
 }) {
   const [col, row, cs, rs] = block
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -339,6 +397,16 @@ function SortableCard({
     >
       <Widget />
       <CardResizeHandle onResize={onResize} />
+      <button
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onDisable() }}
+        className="absolute top-0.5 right-0.5 z-10 hidden h-3.5 w-3.5 items-center justify-center rounded-full text-[var(--color-muted-foreground)] opacity-0 transition-opacity hover:text-[var(--color-foreground)] group-hover:flex group-hover:opacity-60"
+        title="Hide widget"
+      >
+        <svg width="7" height="7" viewBox="0 0 7 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M1 1l5 5M6 1l-5 5"/>
+        </svg>
+      </button>
     </div>
   )
 }
@@ -350,11 +418,38 @@ export default function Dashboard() {
   const [ordered, setOrdered] = useState<OrderedWidget[]>(() => loadOrder(widgets))
   const [sizes, setSizes] = useState<Record<string, WidgetSize>>(loadSizes)
   const [colWidths, setColWidths] = useState<number[]>(loadColWidths)
+  const [scrollLocked, setScrollLocked] = useState(true)
+  const [layout2, setLayout2] = useState<SavedLayout2 | null>(loadLayout2)
+  const [disabled, setDisabled] = useState<Set<string>>(loadDisabled)
+  const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
+  const widgetMenuRef = useRef<HTMLDivElement>(null)
+
+  const orderedVisible = useMemo(() => ordered.filter(w => !disabled.has(w.id)), [ordered, disabled])
+
+  function toggleWidget(id: string) {
+    setDisabled(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      saveDisabled(next)
+      return next
+    })
+  }
+
+  // Close widget menu on outside click
+  useLayoutEffect(() => {
+    if (!widgetMenuOpen) return
+    function handler(e: MouseEvent) {
+      if (widgetMenuRef.current && !widgetMenuRef.current.contains(e.target as Node))
+        setWidgetMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [widgetMenuOpen])
   const gridRef = useRef<HTMLDivElement>(null)
   const [gridWidth, setGridWidth] = useState(0)
 
   // Explicit grid placement — our algorithm IS the layout, clamp is always accurate
-  const blocks = useMemo(() => computeLayoutBlocks(ordered, sizes), [ordered, sizes])
+  const blocks = useMemo(() => computeLayoutBlocks(orderedVisible, sizes), [orderedVisible, sizes])
 
   useEffect(() => {
     if (!gridRef.current) return
@@ -429,24 +524,90 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 backdrop-blur-xl" style={{ backgroundColor: 'var(--header-bg)' }}>
-        <div className="relative flex items-center justify-center px-8 py-[15px]">
-          {/* Current layout icon — left side */}
-          <div className="absolute left-8 flex items-center">
+      <header className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
+        <div className="relative flex items-center justify-center px-8 py-[15px] pointer-events-auto" style={{ color: 'var(--header-text)' }}>
+          {/* Left side */}
+          <div className="absolute left-8 flex items-center gap-2" ref={widgetMenuRef}>
             <button
               onClick={() => {
                 setColWidths(loadColWidths())
                 setOrdered(loadOrder(widgets))
                 setSizes(loadSizes())
               }}
-              className="rounded p-0.5 text-[var(--color-foreground)] opacity-[0.15] hover:opacity-40 transition-opacity"
+              className="rounded p-0.5 opacity-[0.25] hover:opacity-60 transition-opacity"
+              style={{ color: 'var(--header-text)' }}
               title="Current layout"
             >
               <LayoutPreviewIcon blocks={blocks} />
             </button>
+            <button
+              onClick={() => {
+                const snapshot: SavedLayout2 = {
+                  order:     ordered.map(w => w.id),
+                  sizes:     { ...sizes },
+                  colWidths: [...colWidths],
+                  blocks:    [...blocks],
+                }
+                saveLayout2(snapshot)
+                setLayout2(snapshot)
+              }}
+              className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--header-text)' }}
+              title="Save current layout as default 2"
+            >
+              <SaveIcon />
+            </button>
+            <button
+              onClick={() => setScrollLocked(l => !l)}
+              className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--header-text)' }}
+              title={scrollLocked ? 'Unlock scroll' : 'Lock scroll'}
+            >
+              {scrollLocked ? <LockIcon /> : <UnlockIcon />}
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setWidgetMenuOpen(o => !o)}
+                className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title="Show/hide widgets"
+              >
+                <WidgetsIcon />
+              </button>
+              {widgetMenuOpen && (
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] py-1.5 shadow-lg"
+                  style={{ backdropFilter: 'blur(12px)' }}
+                >
+                  {ordered.map(w => (
+                    <button
+                      key={w.id}
+                      onClick={() => toggleWidget(w.id)}
+                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] hover:bg-[var(--color-muted)] transition-colors"
+                    >
+                      <span className={cn(
+                        'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors',
+                        disabled.has(w.id)
+                          ? 'border-[var(--color-border)] bg-transparent'
+                          : 'border-[var(--color-foreground)] bg-[var(--color-foreground)]'
+                      )}>
+                        {!disabled.has(w.id) && (
+                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="var(--card-bg)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1.5 4.5l2 2 4-4"/>
+                          </svg>
+                        )}
+                      </span>
+                      <span className={cn('text-[var(--color-foreground)]', disabled.has(w.id) && 'opacity-40')}>
+                        {w.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <span
-            className="text-[28px] font-semibold tracking-tight text-[var(--color-foreground)] leading-none"
+            className="text-[28px] font-semibold tracking-tight leading-none"
+            style={{ color: 'var(--header-text)' }}
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {(() => {
@@ -457,17 +618,38 @@ export default function Dashboard() {
           </span>
           <div className="absolute right-8 flex items-center gap-3">
             <div className="flex items-center gap-1.5">
+              {layout2 && (
+                <button
+                  onClick={() => {
+                    const l = layout2
+                    const newOrder = l.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
+                    setOrdered(newOrder)
+                    setSizes(l.sizes)
+                    setColWidths(l.colWidths)
+                    saveOrder(newOrder)
+                    saveSizes(l.sizes)
+                    saveColWidths(l.colWidths)
+                  }}
+                  className="rounded p-0.5 opacity-[0.15] hover:opacity-40 transition-opacity"
+                  style={{ color: 'var(--header-text)' }}
+                  title="Saved layout"
+                >
+                  <LayoutPreviewIcon blocks={layout2.blocks} />
+                </button>
+              )}
               <button
                 onClick={() => applyPreset(MAIN_LAYOUT)}
-                className="rounded p-0.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
-                title="Main layout"
+                className="rounded p-0.5 opacity-50 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--header-text)' }}
+                title="Default layout"
               >
                 <LayoutPreviewIcon blocks={MAIN_LAYOUT.blocks} />
               </button>
             </div>
             <button
               onClick={toggle}
-              className="rounded-full p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] transition-colors"
+              className="rounded-full p-1.5 opacity-50 hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--header-text)' }}
               aria-label="Toggle dark mode"
             >
               {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
@@ -477,9 +659,9 @@ export default function Dashboard() {
       </header>
 
       {/* Grid */}
-      <main className="px-4 pt-10">
+      <main className="px-4 pt-6">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={ordered.map((w) => w.id)} strategy={rectSortingStrategy}>
+          <SortableContext items={orderedVisible.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div style={{ position: 'relative' }}>
               {/* Column resize handles */}
               {handlePositions.map((leftPx, i) => (
@@ -495,19 +677,20 @@ export default function Dashboard() {
               {/* Card grid — explicit placement, no auto-flow */}
               <div
                 ref={gridRef}
-                className="grid gap-4 overflow-hidden"
+                className={cn('grid gap-4', scrollLocked && 'overflow-hidden')}
                 style={{
                   gridTemplateColumns: colWidths.map(w => `${w}fr`).join(' '),
                   gridTemplateRows: 'repeat(4, 280px)',
-                  maxHeight: `calc(4 * 280px + 3 * ${GAP}px)`,
+                  ...(scrollLocked && { maxHeight: `calc(4 * 280px + 3 * ${GAP}px)` }),
                 }}
               >
-                {ordered.map((widget, i) => (
+                {orderedVisible.map((widget, i) => (
                   <SortableCard
                     key={widget.id}
                     widget={widget}
                     block={blocks[i] ?? [0, 0, 1, 1]}
                     onResize={(dCol, dRow) => handleResize(widget.id, dCol, dRow)}
+                    onDisable={() => toggleWidget(widget.id)}
                   />
                 ))}
               </div>

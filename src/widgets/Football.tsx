@@ -19,6 +19,13 @@ const CRESTS: Record<Mode, string> = {
   lfc: 'https://crests.football-data.org/64.png',
 }
 
+// PL and CL logos are dark-colored — invert to white in dark mode
+const DARK_INVERT: Record<Mode, boolean> = {
+  pl:  true,
+  cl:  true,
+  lfc: false,
+}
+
 const LABELS: Record<Mode, string> = {
   pl:  'Premier League',
   cl:  'Champions League',
@@ -71,7 +78,7 @@ export function Football() {
 
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <img src={CRESTS[mode]} alt={LABELS[mode]} className="h-8 w-8 object-contain" />
+        <img src={CRESTS[mode]} alt={LABELS[mode]} className={`h-10 w-10 object-contain ${DARK_INVERT[mode] ? 'dark:brightness-0 dark:invert' : ''}`} />
 
         {/* Refresh */}
         <button
@@ -87,16 +94,16 @@ export function Football() {
         </button>
 
         {/* Mode switcher */}
-        <div className="absolute right-0 top-0 flex items-center gap-0.5">
+        <div className="absolute right-0 top-0 flex items-center gap-1">
           {(['pl', 'cl', 'lfc'] as Mode[]).map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
               title={LABELS[m]}
-              className="rounded p-0.5 transition-opacity"
+              className="flex h-7 w-7 items-center justify-center rounded transition-opacity"
               style={{ opacity: mode === m ? 1 : 0.3 }}
             >
-              <img src={CRESTS[m]} alt={LABELS[m]} className="h-5 w-5 object-contain" />
+              <img src={CRESTS[m]} alt={LABELS[m]} className={`object-contain ${m === 'cl' ? 'h-9 w-9' : 'h-7 w-7'} ${DARK_INVERT[m] ? 'dark:brightness-0 dark:invert' : ''}`} />
             </button>
           ))}
         </div>
