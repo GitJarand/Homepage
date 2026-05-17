@@ -12,6 +12,7 @@ lerna-debug.log*
 
 node_modules
 dist
+api/server.js
 dist-ssr
 *.local
 
