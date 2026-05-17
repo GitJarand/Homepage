@@ -186,7 +186,7 @@ export function Electricity() {
   return (
     <div className="relative flex h-full flex-col px-4 pb-3 pt-3">
       {/* Header */}
-      <div className="relative mb-1 flex shrink-0 items-center justify-center">
+      <div className="relative mb-3 flex shrink-0 items-center justify-center pb-3">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffd60a" className="shrink-0">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
@@ -218,7 +218,7 @@ export function Electricity() {
 
       {/* Current price */}
       {status === 'ok' && current && !showTomorrow && (
-        <div className="mb-2 flex items-baseline justify-center gap-1">
+        <div className="mb-1 flex items-baseline justify-center gap-1">
           <span className="text-[36px] font-semibold tabular-nums leading-none text-[var(--color-foreground)]">
             {current.price.toFixed(1)}
           </span>

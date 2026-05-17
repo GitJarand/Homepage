@@ -226,12 +226,12 @@ function MonthView({ date, events, onDayClick }: {
 
   return (
     <div>
-      <div className="mb-1 grid grid-cols-7">
+      <div className="grid grid-cols-7">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
           <p key={i} className="text-center text-[10px] text-[var(--color-muted-foreground)]">{d}</p>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-y-0.5">
         {Array.from({ length: cells }, (_, i) => {
           const offset = i - startPad
           if (offset < 0 || offset >= totalDays) return <div key={i} />
@@ -279,7 +279,7 @@ export function PersonalCalendar() {
   return (
     <div className="flex h-full flex-col bg-transparent px-4 pb-2 pt-3">
       {/* Logo header */}
-      <div className="mb-1 flex shrink-0 flex-col items-center">
+      <div className="mb-3 flex shrink-0 flex-col items-center pb-3">
         <span className="text-3xl leading-none">📅</span>
       </div>
 
