@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 interface MediaItem {
   type: 'movie' | 'show'
@@ -18,6 +19,7 @@ export function Trakt() {
   const [error, setError]   = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [blurred, toggleBlur] = useBlur('homepage:blur-trakt')
+  const workMode = useWorkMode()
 
   useEffect(() => {
     setStatus('loading')
@@ -35,11 +37,10 @@ export function Trakt() {
     <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <img
-          src="https://www.google.com/s2/favicons?domain=trakt.tv&sz=64"
-          alt=""
-          className="h-8 w-8 object-contain"
-        />
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
+          : <img src="https://www.google.com/s2/favicons?domain=trakt.tv&sz=64" alt="" className="h-8 w-8 object-contain" />
+        }
         <div className="absolute left-0 top-0 flex items-center gap-0.5">
           <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
           <BlurButton blurred={blurred} onToggle={toggleBlur} />

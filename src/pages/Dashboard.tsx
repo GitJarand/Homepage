@@ -565,9 +565,11 @@ export default function Dashboard() {
   }, [])
 
   function applyPreset(preset: LayoutPreset) {
-    const newOrder = preset.order
+    const fromPreset = preset.order
       ? preset.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
       : widgets
+    const added = widgets.filter(w => !fromPreset.some(p => p.id === w.id))
+    const newOrder = [...fromPreset, ...added]
     setColWidths(preset.colWidths)
     setOrdered(newOrder)
     setSizes(preset.sizes)
@@ -583,10 +585,10 @@ export default function Dashboard() {
     const rowSpan = Math.max(1, Math.min(NUM_ROWS, cur.rowSpan + dRow)) as RowSpan
     if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return
     const tentative = { ...sizes, [id]: { colSpan, rowSpan } }
-    const clamped   = clampSizesToGrid(ordered, tentative)
+    const clamped   = clampSizesToGrid(orderedVisible, tentative)
     setSizes(clamped)
     saveSizes(clamped)
-  }, [ordered, sizes])
+  }, [orderedVisible, sizes])
 
   const sensors = useSensors(
     useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } }),

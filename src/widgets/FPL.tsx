@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 type View = 'summary' | 'team' | 'leagues'
 
@@ -230,7 +231,8 @@ function LeaguesView({
 export function FPL() {
   const [view, setView]           = useState<View>('summary')
   const [refreshKey, setRefreshKey] = useState(0)
-  const [blurred, toggleBlur]     = useBlur('homepage:blur-fpl', null, false)
+  const [blurred, toggleBlur]     = useBlur('homepage:blur-fpl')
+  const workMode = useWorkMode()
 
   const [manager, setManager]           = useState<Manager | null>(null)
   const [managerLoading, setManagerLoading] = useState(true)
@@ -306,37 +308,39 @@ export function FPL() {
 
       {/* Header */}
       <div className="relative mb-2 flex shrink-0 items-center justify-center">
-        <FplLogo size={28} />
+        {workMode ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" /> : <FplLogo size={28} />}
         <div className="absolute left-0 flex items-center gap-0.5">
           <RefreshButton onClick={handleRefresh} loading={managerLoading} />
           <BlurButton blurred={blurred} onToggle={toggleBlur} />
         </div>
       </div>
 
-      {/* View tabs */}
-      <div className="mb-2 flex shrink-0 gap-1 rounded-lg bg-[var(--color-muted)] p-0.5">
-        {VIEWS.map(v => (
-          <button
-            key={v.key}
-            onClick={() => setView(v.key)}
-            className={`flex-1 rounded-md py-1 text-[11px] font-medium transition-colors ${view === v.key ? 'bg-[var(--card-bg)] text-[var(--color-foreground)] shadow-sm' : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'}`}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
+      <div className={`flex flex-1 flex-col overflow-hidden transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
+        {/* View tabs */}
+        <div className="mb-2 flex shrink-0 gap-1 rounded-lg bg-[var(--color-muted)] p-0.5">
+          {VIEWS.map(v => (
+            <button
+              key={v.key}
+              onClick={() => setView(v.key)}
+              className={`flex-1 rounded-md py-1 text-[11px] font-medium transition-colors ${view === v.key ? 'bg-[var(--card-bg)] text-[var(--color-foreground)] shadow-sm' : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'}`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
 
-      {/* Content */}
-      <div className={`flex-1 overflow-y-auto transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
-        {view === 'summary' && <SummaryView manager={manager} loading={managerLoading} />}
-        {view === 'team'    && <TeamView picks={picks} loading={picksLoading} />}
-        {view === 'leagues' && (
-          <LeaguesView
-            leagues={leagues} loading={leaguesLoading}
-            selectedId={selectedLeague} onSelect={setSelectedLeague}
-            standings={standings} standingsLoading={standingsLoading}
-          />
-        )}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {view === 'summary' && <SummaryView manager={manager} loading={managerLoading} />}
+          {view === 'team'    && <TeamView picks={picks} loading={picksLoading} />}
+          {view === 'leagues' && (
+            <LeaguesView
+              leagues={leagues} loading={leaguesLoading}
+              selectedId={selectedLeague} onSelect={setSelectedLeague}
+              standings={standings} standingsLoading={standingsLoading}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

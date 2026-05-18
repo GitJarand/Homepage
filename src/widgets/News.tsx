@@ -54,7 +54,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
   const [refreshKey, setRefreshKey] = useState(0)
   const [visibleCount, setVisibleCount] = useState(PAGE)
   const [sort, setSort] = useState<'hot' | 'new'>('hot')
-  const [blurred, toggleBlur] = useBlur(`homepage:blur-news-${source}`, null, false)
+  const [blurred, toggleBlur] = useBlur(`homepage:blur-news-${source}`)
   const filterRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
