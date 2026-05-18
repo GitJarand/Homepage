@@ -19,7 +19,10 @@ import { CSS } from '@dnd-kit/utilities'
 import { widgets, type OrderedWidget } from '@/widgets/registry'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
-import { WorkModeContext } from '@/lib/workMode'
+import { WorkModeContext, WORK_LOGO } from '@/lib/workMode'
+
+const BOUNCE_W = 520
+const BOUNCE_H = 162
 
 function SunIcon() {
   return (
@@ -442,6 +445,11 @@ export default function Dashboard() {
   const [layout1, setLayout1] = useState<SavedLayout2 | null>(loadLayout1)
   const [confirmSaveMain, setConfirmSaveMain] = useState(false)
   const [workMode, setWorkMode] = useState(false)
+  const [superMode, setSuperMode] = useState(false)
+  const [logoPos, setLogoPos] = useState({ x: 200, y: 200 })
+  const bounceState = useRef({ x: 200, y: 200, vx: 2.2, vy: 1.6 })
+  const bounceRaf = useRef(0)
+  const headerRef = useRef<HTMLElement>(null)
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false)
   const widgetMenuRef = useRef<HTMLDivElement>(null)
 
@@ -466,6 +474,35 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [widgetMenuOpen])
+
+  // Exit super mode when work mode turns off
+  useEffect(() => { if (!workMode) setSuperMode(false) }, [workMode])
+
+  // Bouncing DVD logo animation — single logo, top boundary = header bottom edge
+  useEffect(() => {
+    if (!superMode) return
+    const s = bounceState.current
+    s.x  = Math.random() * Math.max(1, window.innerWidth  - BOUNCE_W)
+    s.y  = 150 + Math.random() * Math.max(1, window.innerHeight - BOUNCE_H - 150)
+    s.vx = (Math.random() > 0.5 ? 1 : -1) * (1.8 + Math.random() * 0.8)
+    s.vy = (Math.random() > 0.5 ? 1 : -1) * (1.4 + Math.random() * 0.8)
+    function tick() {
+      const headerH = headerRef.current?.offsetHeight ?? 60
+      const maxX = window.innerWidth  - BOUNCE_W
+      const maxY = window.innerHeight - BOUNCE_H
+      const minY = headerH
+      s.x += s.vx
+      s.y += s.vy
+      if (s.x <= 0)    { s.x = 0;    s.vx =  Math.abs(s.vx) }
+      if (s.x >= maxX) { s.x = maxX; s.vx = -Math.abs(s.vx) }
+      if (s.y <= minY) { s.y = minY; s.vy =  Math.abs(s.vy) }
+      if (s.y >= maxY) { s.y = maxY; s.vy = -Math.abs(s.vy) }
+      setLogoPos({ x: s.x, y: s.y })
+      bounceRaf.current = requestAnimationFrame(tick)
+    }
+    bounceRaf.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(bounceRaf.current)
+  }, [superMode])
 
   // Close save-main confirm popup on outside click
   useLayoutEffect(() => {
@@ -554,7 +591,7 @@ export default function Dashboard() {
     <WorkModeContext.Provider value={workMode}>
     <div className="min-h-screen">
       {/* Nav bar */}
-      <header className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
+      <header ref={headerRef} className="sticky top-0 z-10 backdrop-blur-xl pointer-events-none" style={{ backgroundColor: 'var(--header-surface)', borderBottom: '1px solid var(--header-surface-border)', color: 'var(--header-text)' }}>
         <div className="relative flex items-center justify-center px-8 py-[15px] pointer-events-auto" style={{ color: 'var(--header-text)' }}>
           {/* Left side */}
           <div className="absolute left-8 flex items-center gap-2" ref={widgetMenuRef}>
@@ -656,7 +693,7 @@ export default function Dashboard() {
             </div>
           </div>
           {workMode
-            ? <img src="https://ik.imagekit.io/businesswith/tr:w-200,h-100,cm-pad_resize,dpr-2/logo/hypergene-logo.png" alt="Hypergene" className="h-8 object-contain" style={{ filter: 'var(--header-logo-filter)' }} />
+            ? <img src={WORK_LOGO} alt="Hypergene" className="h-8 object-contain" style={{ filter: 'var(--header-logo-filter)' }} />
             : <span
                 className="text-[28px] font-semibold tracking-tight leading-none"
                 style={{ color: 'var(--header-text)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -678,10 +715,11 @@ export default function Dashboard() {
               {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
             <button
-              onClick={() => setWorkMode(m => !m)}
-              className="rounded-full p-1.5 transition-opacity"
-              style={{ color: 'var(--header-text)', opacity: workMode ? 1 : 0.5 }}
-              title={workMode ? 'Exit work mode' : 'Work mode'}
+              onClick={() => { setSuperMode(false); setWorkMode(m => !m) }}
+              onContextMenu={e => { e.preventDefault(); setWorkMode(true); setSuperMode(m => !m) }}
+              className="rounded-full p-1.5 transition-colors"
+              style={{ color: superMode ? '#ff3b30' : 'var(--header-text)', opacity: workMode || superMode ? 1 : 0.5 }}
+              title={superMode ? 'Click to turn off · right-click to exit super mode' : workMode ? 'Click to turn off · right-click for super mode' : 'Click for work mode · right-click for super mode'}
             >
               <BriefcaseIcon />
             </button>
@@ -795,6 +833,28 @@ export default function Dashboard() {
           </SortableContext>
         </DndContext>
       </main>
+
+      {/* ── Super mode overlay ── */}
+      {superMode && (
+        <>
+          {/* Full-screen blur — sits below the sticky header (z-10) */}
+          <div className="fixed inset-0 z-[9] backdrop-blur-xl" style={{ backgroundColor: 'rgba(0,0,0,0.18)' }} />
+          {/* Bouncing Hypergene logo */}
+          <img
+            src={WORK_LOGO}
+            alt=""
+            className="fixed z-[20] pointer-events-none select-none"
+            style={{
+              left: logoPos.x,
+              top: logoPos.y,
+              width: BOUNCE_W,
+              height: BOUNCE_H,
+              objectFit: 'contain',
+              filter: 'var(--header-logo-filter)',
+            }}
+          />
+        </>
+      )}
     </div>
     </WorkModeContext.Provider>
   )

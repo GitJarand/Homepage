@@ -178,7 +178,7 @@ export function Electricity() {
   const [status, setStatus] = useState<'loading' | 'error' | 'ok'>('loading')
   const [showTomorrow, setShowTomorrow] = useState(false)
   const [refreshKey, setRefreshKey]     = useState(0)
-  const [blurred, toggleBlur]           = useBlur('homepage:blur-electricity')
+  const [blurred, toggleBlur]           = useBlur('homepage:blur-electricity', null, false)
 
   useEffect(() => {
     setStatus('loading')

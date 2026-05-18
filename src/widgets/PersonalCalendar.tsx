@@ -273,7 +273,7 @@ export function PersonalCalendar() {
   const [view, setView] = useState<CalendarView>('day')
   const [date, setDate] = useState(() => new Date())
   const { data, status, error } = useCalendarData(date, view)
-  const [blurred, toggleBlur] = useBlur('homepage:blur-calendar')
+  const [blurred, toggleBlur] = useBlur('homepage:blur-calendar', null, false)
   const workMode = useWorkMode()
 
   const handleDayClick = useCallback((d: Date) => { setDate(d); setView('day') }, [])
@@ -285,7 +285,7 @@ export function PersonalCalendar() {
       {/* Logo header */}
       <div className="relative mb-2 flex shrink-0 flex-col items-center pb-2">
         {workMode
-          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
           : <span className="text-3xl leading-none">📅</span>
         }
         <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />

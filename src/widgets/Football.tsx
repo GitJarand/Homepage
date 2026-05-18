@@ -55,7 +55,7 @@ export function Football() {
   const [status, setStatus]   = useState<'loading' | 'error' | 'ok'>('loading')
   const [error, setError]     = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [blurred, toggleBlur] = useBlur('homepage:blur-football')
+  const [blurred, toggleBlur] = useBlur('homepage:blur-football', null, false)
 
   useEffect(() => {
     setStatus('loading')
