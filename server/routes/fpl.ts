@@ -34,20 +34,26 @@ async function fplFetch(path: string, ttlMs: number): Promise<unknown> {
 fpl.get('/manager', async (c) => {
   try {
     const id = teamId()
-    const [entry, bootstrap] = await Promise.all([
+    const [entry, bootstrap, history] = await Promise.all([
       fplFetch(`/entry/${id}/`, 5 * 60_000) as Promise<any>,
       fplFetch('/bootstrap-static/', 5 * 60_000) as Promise<any>,
+      fplFetch(`/entry/${id}/history/`, 5 * 60_000) as Promise<any>,
     ])
 
     const currentGw = bootstrap.events.find((e: any) => e.is_current)
       ?? bootstrap.events.findLast((e: any) => e.finished)
 
+    const gwHistory: any[] = history.current ?? []
+    const prevGw = gwHistory.length >= 2 ? gwHistory[gwHistory.length - 2] : null
+
     return c.json({
-      managerId:   id,
-      managerName: `${entry.player_first_name} ${entry.player_last_name}`,
-      teamName:    entry.name,
-      totalPoints: entry.summary_overall_points,
-      overallRank: entry.summary_overall_rank,
+      managerId:         id,
+      managerName:       `${entry.player_first_name} ${entry.player_last_name}`,
+      teamName:          entry.name,
+      totalPoints:       entry.summary_overall_points,
+      overallRank:       entry.summary_overall_rank,
+      prevOverallRank:   prevGw?.overall_rank ?? null,
+      prevGwRank:        prevGw?.rank ?? null,
       gameweek: currentGw ? {
         id:     currentGw.id,
         name:   currentGw.name,

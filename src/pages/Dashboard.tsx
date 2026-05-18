@@ -723,7 +723,7 @@ export default function Dashboard() {
               >
                 {(() => {
                   const h = new Date().getHours()
-                  const period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+                  const period = h < 6 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
                   return `Good ${period}, Jarand`
                 })()}
               </span>

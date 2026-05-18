@@ -11,6 +11,8 @@ interface Manager {
   teamName:    string
   totalPoints: number
   overallRank: number
+  prevOverallRank: number | null
+  prevGwRank: number | null
   gameweek: { id: number; name: string; points: number; rank: number } | null
 }
 
@@ -73,16 +75,21 @@ function SummaryView({ manager, loading }: { manager: Manager | null; loading: b
 
       {/* GW card */}
       {gw && (
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2">
-          <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{gw.name}</p>
-          <div className="flex items-baseline justify-between">
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] px-4 py-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{gw.name}</p>
+          <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold tabular-nums text-[var(--color-foreground)]">{gw.points}</span>
-              <span className="text-xs text-[var(--color-muted-foreground)]">pts</span>
+              <span className="text-4xl font-bold tabular-nums text-[var(--color-foreground)]">{gw.points}</span>
+              <span className="text-sm text-[var(--color-muted-foreground)]">pts</span>
             </div>
-            <span className="text-xs text-[var(--color-muted-foreground)]">Total rank <span className="font-semibold text-[var(--color-foreground)]">{fmtRank(manager.overallRank)}</span></span>
+            <div className="flex flex-col items-end gap-0.5">
+              <p className="text-[10px] text-[var(--color-muted-foreground)]">GW rank</p>
+              <div className="flex items-center gap-1">
+                {manager.prevGwRank != null && <RankDelta curr={gw.rank} prev={manager.prevGwRank} />}
+                <p className="text-lg font-bold tabular-nums text-[var(--color-foreground)]">{fmtRank(gw.rank)}</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-[var(--color-muted-foreground)]">GW rank <span className="font-semibold text-[var(--color-foreground)]">{fmtRank(gw.rank)}</span></p>
         </div>
       )}
 
@@ -94,7 +101,10 @@ function SummaryView({ manager, loading }: { manager: Manager | null; loading: b
         </div>
         <div className="text-right">
           <p className="text-[var(--color-muted-foreground)]">Overall rank</p>
-          <p className="text-lg font-bold tabular-nums text-[var(--color-foreground)]">{fmtRank(manager.overallRank)}</p>
+          <div className="flex items-center justify-end gap-1">
+            {manager.prevOverallRank != null && <RankDelta curr={manager.overallRank} prev={manager.prevOverallRank} />}
+            <p className="text-lg font-bold tabular-nums text-[var(--color-foreground)]">{fmtRank(manager.overallRank)}</p>
+          </div>
         </div>
       </div>
     </div>
