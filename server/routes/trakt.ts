@@ -29,6 +29,10 @@ export interface MediaItem {
 const ratingCache = new Map<string, { rating: string | null; ts: number }>()
 const RATING_TTL  = 24 * 60 * 60 * 1000
 
+// Full list cache — avoids re-fetching OMDb on every cold start
+let listCache: { items: MediaItem[]; ts: number } | null = null
+const LIST_TTL = 10 * 60 * 1000 // 10 min
+
 async function fetchImdbRating(imdbId: string): Promise<string | null> {
   const cached = ratingCache.get(imdbId)
   if (cached && Date.now() - cached.ts < RATING_TTL) return cached.rating
@@ -38,7 +42,7 @@ async function fetchImdbRating(imdbId: string): Promise<string | null> {
   try {
     const res = await fetch(
       `https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_KEY}`,
-      { signal: AbortSignal.timeout(5000) }
+      { signal: AbortSignal.timeout(3000) }
     )
     if (!res.ok) return null
     const data = await res.json() as { imdbRating?: string; Response?: string }
@@ -55,6 +59,11 @@ async function fetchImdbRating(imdbId: string): Promise<string | null> {
 trakt.get('/list', async (c) => {
   if (!CLIENT_ID) return c.json({ error: 'TRAKT_CLIENT_ID not configured' }, 500)
 
+  // Return cached result if still fresh
+  if (listCache && Date.now() - listCache.ts < LIST_TTL) {
+    return c.json({ items: listCache.items })
+  }
+
   try {
     const res = await fetch(
       `https://api.trakt.tv/users/${TRAKT_USER}/lists/${TRAKT_LIST}/items?extended=full&limit=100`,
@@ -66,7 +75,7 @@ trakt.get('/list', async (c) => {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(5000),
       }
     )
 
@@ -76,12 +85,12 @@ trakt.get('/list', async (c) => {
     }
 
     const raw = await res.json() as TraktItem[]
-
     const filtered = raw.filter(i => i.type === 'movie' || i.type === 'show')
 
-    // Batch-fetch IMDb ratings (all in parallel, failures silently null)
+    // Only fetch OMDb ratings for first 30 items to stay within Vercel timeout
+    const withRatings = filtered.slice(0, 30)
     const ratings = await Promise.allSettled(
-      filtered.map(item => {
+      withRatings.map(item => {
         const media = item.type === 'movie' ? item.movie! : item.show!
         const id    = media.ids.imdb ?? null
         return id ? fetchImdbRating(id) : Promise.resolve(null)
@@ -91,18 +100,19 @@ trakt.get('/list', async (c) => {
     const items: MediaItem[] = filtered.map((item, idx) => {
       const type  = item.type as 'movie' | 'show'
       const media = type === 'movie' ? item.movie! : item.show!
-      const ratingResult = ratings[idx]
+      const ratingResult = idx < 30 ? ratings[idx] : null
       return {
         type,
         title:      media.title,
         year:       media.year ?? null,
         traktSlug:  media.ids.slug ?? null,
         imdbId:     media.ids.imdb ?? null,
-        imdbRating: ratingResult.status === 'fulfilled' ? ratingResult.value : null,
+        imdbRating: ratingResult?.status === 'fulfilled' ? ratingResult.value : null,
         listedAt:   item.listed_at,
       }
     })
 
+    listCache = { items, ts: Date.now() }
     return c.json({ items })
   } catch (err) {
     return c.json({ error: String(err) }, 500)
