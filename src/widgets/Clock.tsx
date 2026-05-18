@@ -77,7 +77,7 @@ export function Clock() {
       {/* ── Widget header: icon + blur toggle ── */}
       <div className="relative mb-2 flex shrink-0 flex-col items-center pb-2">
         {workMode
-          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
           : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-black/50 dark:text-white/50">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>

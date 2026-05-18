@@ -54,7 +54,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
   const [refreshKey, setRefreshKey] = useState(0)
   const [visibleCount, setVisibleCount] = useState(PAGE)
   const [sort, setSort] = useState<'hot' | 'new'>('hot')
-  const [blurred, toggleBlur] = useBlur(`homepage:blur-news-${source}`)
+  const [blurred, toggleBlur] = useBlur(`homepage:blur-news-${source}`, null, false)
   const filterRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -147,7 +147,7 @@ export function News({ source = 'vg', label: _label, fetchLimit = 15, defaultHid
     <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
         {workMode
-          ? <img src={WORK_LOGO} alt="" className="h-8 object-contain" />
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
           : logo && (
             logo.type === 'img'
               ? <img src={logo.url} alt="" className="h-8 w-8 object-contain" />
