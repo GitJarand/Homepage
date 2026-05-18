@@ -7,7 +7,28 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type PointerActivationConstraint,
 } from '@dnd-kit/core'
+
+class SmartPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown' as const,
+      handler: (
+        { nativeEvent }: { nativeEvent: PointerEvent },
+        { activationConstraint }: { activationConstraint?: PointerActivationConstraint }
+      ) => {
+        if (!nativeEvent.isPrimary || nativeEvent.button !== 0) return false
+        const target = nativeEvent.target as HTMLElement
+        if (target.closest('input, textarea, select, button, a, [contenteditable]')) return false
+        return PointerSensor.activators[0].handler(
+          { nativeEvent } as any,
+          { activationConstraint } as any
+        )
+      },
+    },
+  ]
+}
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -568,7 +589,7 @@ export default function Dashboard() {
   }, [ordered, sizes])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 

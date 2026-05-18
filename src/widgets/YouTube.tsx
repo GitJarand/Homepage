@@ -203,7 +203,7 @@ function AddForm({ onAdd }: { onAdd: (channel: SavedChannel) => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2">
+    <form onSubmit={submit} onKeyDown={e => e.stopPropagation()} className="flex flex-col gap-2">
       <input
         autoFocus
         value={url}
