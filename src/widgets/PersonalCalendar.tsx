@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { WidgetDataState } from './types'
 import { BlurButton, useBlur } from '../components/BlurButton'
-import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -274,7 +273,6 @@ export function PersonalCalendar() {
   const [date, setDate] = useState(() => new Date())
   const { data, status, error } = useCalendarData(date, view)
   const [blurred, toggleBlur] = useBlur('homepage:blur-calendar', null, false)
-  const workMode = useWorkMode()
 
   const handleDayClick = useCallback((d: Date) => { setDate(d); setView('day') }, [])
   const handlePrev = useCallback(() => setDate((d) => navigate(d, view, -1)), [view])
@@ -284,10 +282,7 @@ export function PersonalCalendar() {
     <div className="flex h-full flex-col bg-transparent px-4 pb-2 pt-3">
       {/* Logo header */}
       <div className="relative mb-2 flex shrink-0 flex-col items-center pb-2">
-        {workMode
-          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
-          : <span className="text-3xl leading-none">📅</span>
-        }
+        <span className="text-3xl leading-none">📅</span>
         <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
       </div>
 

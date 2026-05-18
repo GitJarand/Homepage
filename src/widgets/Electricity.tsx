@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../components/RefreshButton'
 import { getCoords } from '../lib/geolocation'
 import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 const ZONE_NAMES: Record<string, string> = {
   NO1: 'Oslo',
@@ -178,7 +179,8 @@ export function Electricity() {
   const [status, setStatus] = useState<'loading' | 'error' | 'ok'>('loading')
   const [showTomorrow, setShowTomorrow] = useState(false)
   const [refreshKey, setRefreshKey]     = useState(0)
-  const [blurred, toggleBlur]           = useBlur('homepage:blur-electricity', null, false)
+  const [blurred, toggleBlur]           = useBlur('homepage:blur-electricity')
+  const workMode = useWorkMode()
 
   useEffect(() => {
     setStatus('loading')
@@ -204,9 +206,10 @@ export function Electricity() {
     <div className="relative flex h-full flex-col px-4 pb-3 pt-3">
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 items-center justify-center pb-3">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffd60a" className="shrink-0">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-        </svg>
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
+          : <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffd60a" className="shrink-0"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        }
 
         <div className="absolute left-0 top-0 flex items-center gap-0.5">
           <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />

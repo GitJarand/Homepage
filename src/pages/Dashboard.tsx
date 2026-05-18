@@ -7,7 +7,28 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type PointerActivationConstraint,
 } from '@dnd-kit/core'
+
+class SmartPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown' as const,
+      handler: (
+        { nativeEvent }: { nativeEvent: PointerEvent },
+        { activationConstraint }: { activationConstraint?: PointerActivationConstraint }
+      ) => {
+        if (!nativeEvent.isPrimary || nativeEvent.button !== 0) return false
+        const target = nativeEvent.target as HTMLElement
+        if (target.closest('input, textarea, select, button, a, [contenteditable]')) return false
+        return PointerSensor.activators[0].handler(
+          { nativeEvent } as any,
+          { activationConstraint } as any
+        )
+      },
+    },
+  ]
+}
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -544,9 +565,11 @@ export default function Dashboard() {
   }, [])
 
   function applyPreset(preset: LayoutPreset) {
-    const newOrder = preset.order
+    const fromPreset = preset.order
       ? preset.order.map(id => widgets.find(w => w.id === id)).filter(Boolean) as OrderedWidget[]
       : widgets
+    const added = widgets.filter(w => !fromPreset.some(p => p.id === w.id))
+    const newOrder = [...fromPreset, ...added]
     setColWidths(preset.colWidths)
     setOrdered(newOrder)
     setSizes(preset.sizes)
@@ -562,13 +585,13 @@ export default function Dashboard() {
     const rowSpan = Math.max(1, Math.min(NUM_ROWS, cur.rowSpan + dRow)) as RowSpan
     if (colSpan === cur.colSpan && rowSpan === cur.rowSpan) return
     const tentative = { ...sizes, [id]: { colSpan, rowSpan } }
-    const clamped   = clampSizesToGrid(ordered, tentative)
+    const clamped   = clampSizesToGrid(orderedVisible, tentative)
     setSizes(clamped)
     saveSizes(clamped)
-  }, [ordered, sizes])
+  }, [orderedVisible, sizes])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
@@ -700,7 +723,7 @@ export default function Dashboard() {
               >
                 {(() => {
                   const h = new Date().getHours()
-                  const period = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+                  const period = h < 6 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
                   return `Good ${period}, Jarand`
                 })()}
               </span>

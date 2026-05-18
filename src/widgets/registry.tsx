@@ -11,6 +11,8 @@ import { Trakt } from './Trakt'
 import { Football } from './Football'
 import { Shopping } from './Shopping'
 import { Electricity } from './Electricity'
+import { FPL } from './FPL'
+import { WorldCup } from './WorldCup'
 
 export const widgets: WidgetDefinition[] = [
   // ── Row 1: 6 small cards ──────────────────────────────────────────────────
@@ -114,5 +116,19 @@ export const widgets: WidgetDefinition[] = [
     description: 'Upcoming Premier League, Champions League and Liverpool matches',
     component: Football,
     color: 'rgba(200, 16, 46, 0.08)',        colorDark: 'rgba(200, 16, 46, 0.16)',
+  },
+  {
+    id: 'fpl',
+    title: 'FPL',
+    description: 'Fantasy Premier League — team, GW points and league standings',
+    component: FPL,
+    color: 'rgba(55, 0, 60, 0.07)',          colorDark: 'rgba(0, 255, 135, 0.07)',
+  },
+  {
+    id: 'world-cup',
+    title: 'World Cup 2026',
+    description: 'FIFA World Cup 2026 — matches, groups and Norway',
+    component: WorldCup,
+    color: 'rgba(0, 122, 255, 0.08)',        colorDark: 'rgba(0, 122, 255, 0.15)',
   },
 ]

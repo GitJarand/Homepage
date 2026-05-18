@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 
 type Theme = 'dark' | 'light' | 'system'
 
+function isSystemDark(): boolean {
+  const h = new Date().getHours()
+  return h >= 18 || h < 6
+}
+
 function applyTheme(theme: Theme) {
   const root = document.documentElement
   if (theme === 'dark') {
@@ -11,13 +16,14 @@ function applyTheme(theme: Theme) {
     root.classList.add('light')
     root.classList.remove('dark')
   } else {
-    root.classList.remove('dark', 'light')
+    root.classList.toggle('dark', isSystemDark())
+    root.classList.remove('light')
   }
 }
 
 function resolvedTheme(theme: Theme): 'dark' | 'light' {
   if (theme !== 'system') return theme
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return isSystemDark() ? 'dark' : 'light'
 }
 
 export function useTheme() {
@@ -30,6 +36,9 @@ export function useTheme() {
     applyTheme(theme)
     if (theme === 'system') {
       localStorage.removeItem('theme')
+      // Re-check every minute so the theme flips exactly at 06:00 and 18:00
+      const id = setInterval(() => applyTheme('system'), 60_000)
+      return () => clearInterval(id)
     } else {
       localStorage.setItem('theme', theme)
     }

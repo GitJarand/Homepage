@@ -23,30 +23,46 @@ function EyeOffIcon() {
  * Persists a blur-toggle state in localStorage.
  * @param storageKey  e.g. 'homepage:blur-packages'
  * @param onBlur      optional callback fired when transitioning to blurred
+ * @param workBlur    if true, widget is blurred by default in work mode (but still individually toggleable)
  */
 export function useBlur(storageKey: string, onBlur?: (() => void) | null, workBlur = true): [boolean, () => void] {
   const workMode = useWorkMode()
   const [blurred, setBlurred] = useState(() => localStorage.getItem(storageKey) === '1')
+  // Tracks whether the user has manually unblurred this widget while in work mode
+  const [workUnblurred, setWorkUnblurred] = useState(false)
   const prevWorkMode = useRef(workMode)
 
-  // When work mode turns off, unblur
   useEffect(() => {
+    if (!prevWorkMode.current && workMode) {
+      // Entering work mode: reset any per-widget override
+      setWorkUnblurred(false)
+    }
     if (prevWorkMode.current && !workMode) {
+      // Leaving work mode: unblur and clear override
       setBlurred(false)
+      setWorkUnblurred(false)
       localStorage.setItem(storageKey, '0')
     }
     prevWorkMode.current = workMode
   }, [workMode, storageKey])
 
   function toggle() {
-    setBlurred(b => {
-      if (!b) onBlur?.()
-      localStorage.setItem(storageKey, b ? '0' : '1')
-      return !b
-    })
+    if (workMode && workBlur) {
+      // In work mode: toggle the per-widget unblur override
+      setWorkUnblurred(u => !u)
+    } else {
+      setBlurred(b => {
+        if (!b) onBlur?.()
+        localStorage.setItem(storageKey, b ? '0' : '1')
+        return !b
+      })
+    }
   }
 
-  return [blurred || (workBlur ? workMode : false), toggle]
+  // In work mode with workBlur: blurred by default, unless user has manually unblurred
+  const effectiveBlur = workMode && workBlur ? !workUnblurred : blurred
+
+  return [effectiveBlur, toggle]
 }
 
 interface BlurButtonProps {

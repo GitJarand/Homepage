@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BlurButton, useBlur } from '../components/BlurButton'
+import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
 // Earthy pastels for the open editor — present but muted
 const EXPANDED_COLORS = [
@@ -62,6 +63,7 @@ export function Notes() {
   const [notes, setNotes] = useState<Note[]>(loadNotes)
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
   const [blurred, toggleBlur] = useBlur('homepage:blur-notes', () => setActiveIdx(null))
+  const workMode = useWorkMode()
 
   function updateNote(idx: number, patch: Partial<Note>) {
     setNotes(prev => {
@@ -78,7 +80,10 @@ export function Notes() {
 
       {/* Header */}
       <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <span className="text-2xl leading-none">📝</span>
+        {workMode
+          ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
+          : <span className="text-2xl leading-none">📝</span>
+        }
         <BlurButton blurred={blurred} onToggle={toggleBlur} className="absolute left-0 top-0" />
       </div>
 

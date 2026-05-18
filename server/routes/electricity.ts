@@ -37,7 +37,7 @@ async function fetchPrices(date: Date): Promise<HourPrice[]> {
 
   const raw = await res.json() as RawPrice[]
   const prices: HourPrice[] = raw.map(r => ({
-    hour:  new Date(r.time_start).getHours(),
+    hour:  parseInt(r.time_start.slice(11, 13), 10), // local hour from ISO string, timezone-safe
     price: Math.round(r.NOK_per_kWh * 100 * 100) / 100, // øre/kWh, 2dp
   }))
 

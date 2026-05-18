@@ -9,6 +9,8 @@ import weather from './routes/weather'
 import football from './routes/football'
 import shopping from './routes/shopping'
 import electricity from './routes/electricity'
+import fpl from './routes/fpl'
+import worldcup from './routes/worldcup'
 
 const app = new Hono()
 
@@ -27,6 +29,8 @@ app.route('/api/weather',     weather)
 app.route('/api/football',    football)
 app.route('/api/shopping',    shopping)
 app.route('/api/electricity', electricity)
+app.route('/api/fpl',        fpl)
+app.route('/api/worldcup',   worldcup)
 
 app.get('/health', (c) => c.json({ ok: true }))
 
