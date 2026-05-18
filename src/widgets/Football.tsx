@@ -80,25 +80,23 @@ export function Football() {
     <div className="relative flex h-full flex-col px-4 pb-4 pt-3">
 
       {/* Header */}
-      <div className="relative mb-3 flex shrink-0 flex-col items-center pb-3">
-        <img src={CRESTS[mode]} alt={LABELS[mode]} className={`h-10 w-10 object-contain ${DARK_INVERT[mode] ? 'dark:brightness-0 dark:invert' : ''}`} />
-
-        <div className="absolute left-0 top-0 flex items-center gap-0.5">
+      <div className="relative mb-3 flex shrink-0 items-center justify-center pb-3">
+        <div className="absolute left-0 flex items-center gap-0.5">
           <RefreshButton onClick={() => setRefreshKey(k => k + 1)} loading={status === 'loading'} />
           <BlurButton blurred={blurred} onToggle={toggleBlur} />
         </div>
 
-        {/* Mode switcher */}
-        <div className="absolute right-0 top-0 flex items-center gap-1">
-          {(['pl', 'cl', 'lfc'] as Mode[]).map(m => (
+        {/* Mode switcher — centred */}
+        <div className="flex items-center gap-4">
+          {(['cl', 'pl', 'lfc'] as Mode[]).map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
               title={LABELS[m]}
-              className="flex h-7 w-7 items-center justify-center rounded transition-opacity"
-              style={{ opacity: mode === m ? 1 : 0.3 }}
+              className="flex items-center justify-center rounded transition-opacity"
+              style={{ opacity: mode === m ? 1 : 0.3, marginTop: m === 'cl' ? '4px' : 0 }}
             >
-              <img src={CRESTS[m]} alt={LABELS[m]} className={`object-contain ${m === 'cl' ? 'h-9 w-9' : 'h-7 w-7'} ${DARK_INVERT[m] ? 'dark:brightness-0 dark:invert' : ''}`} />
+              <img src={CRESTS[m]} alt={LABELS[m]} className={`object-contain ${m === 'pl' ? 'h-12 w-12' : m === 'cl' ? 'h-8 w-8' : 'h-8 w-8'} ${DARK_INVERT[m] ? 'dark:brightness-0 dark:invert' : ''}`} />
             </button>
           ))}
         </div>
