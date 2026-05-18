@@ -75,7 +75,6 @@ trakt.get('/list', async (c) => {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(5000),
       }
     )
 
@@ -87,27 +86,30 @@ trakt.get('/list', async (c) => {
     const raw = await res.json() as TraktItem[]
     const filtered = raw.filter(i => i.type === 'movie' || i.type === 'show')
 
-    // Only fetch OMDb ratings for first 30 items to stay within Vercel timeout
+    // Race all OMDb fetches against a 3s global deadline so they never block the response
     const withRatings = filtered.slice(0, 30)
-    const ratings = await Promise.allSettled(
-      withRatings.map(item => {
-        const media = item.type === 'movie' ? item.movie! : item.show!
-        const id    = media.ids.imdb ?? null
-        return id ? fetchImdbRating(id) : Promise.resolve(null)
-      })
+    const deadline = new Promise<null[]>(resolve =>
+      setTimeout(() => resolve(new Array(withRatings.length).fill(null)), 3000)
     )
+    const ratings = await Promise.race([
+      Promise.allSettled(withRatings.map(item => {
+        const id = (item.type === 'movie' ? item.movie! : item.show!).ids.imdb ?? null
+        return id ? fetchImdbRating(id) : Promise.resolve(null)
+      })),
+      deadline,
+    ])
 
     const items: MediaItem[] = filtered.map((item, idx) => {
       const type  = item.type as 'movie' | 'show'
       const media = type === 'movie' ? item.movie! : item.show!
-      const ratingResult = idx < 30 ? ratings[idx] : null
+      const r = idx < 30 ? ratings[idx] : null
       return {
         type,
         title:      media.title,
         year:       media.year ?? null,
         traktSlug:  media.ids.slug ?? null,
         imdbId:     media.ids.imdb ?? null,
-        imdbRating: ratingResult?.status === 'fulfilled' ? ratingResult.value : null,
+        imdbRating: r && typeof r === 'object' && 'status' in r && r.status === 'fulfilled' ? r.value : null,
         listedAt:   item.listed_at,
       }
     })
