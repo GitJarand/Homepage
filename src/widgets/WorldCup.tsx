@@ -3,7 +3,7 @@ import { RefreshButton } from '../components/RefreshButton'
 import { BlurButton, useBlur } from '../components/BlurButton'
 import { useWorkMode, WORK_LOGO } from '../lib/workMode'
 
-type WCTab = 'next' | 'groups' | 'upcoming' | 'norway'
+type WCTab = 'upcoming' | 'groups'
 
 interface Team  { id: number; name: string; short: string; crest: string }
 interface Match {
@@ -33,10 +33,6 @@ function formatTime(utcDate: string) {
   if (diffDays === 1) return `Tomorrow ${time}`
   if (diffDays <= 6)  return `${d.toLocaleDateString('en-GB', { weekday: 'short' })} ${time}`
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ` ${time}`
-}
-
-function formatStage(stage: string) {
-  return stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function groupByDate(matches: Match[]): { label: string; matches: Match[] }[] {
@@ -93,29 +89,23 @@ function MatchSkeleton() {
 
 // ── Tab views ─────────────────────────────────────────────────────────────────
 
-function NextView({ data, loading }: { data: { matches: Match[]; matchday?: number; stage?: string } | null; loading: boolean }) {
+function UpcomingView({ matches, loading }: { matches: Match[] | null; loading: boolean }) {
   if (loading) return <MatchSkeleton />
-  if (!data) return <p className="text-sm text-red-400">Failed to load.</p>
+  if (!matches) return <p className="text-sm text-red-400">Failed to load.</p>
 
-  const label = data.matchday ? `Matchday ${data.matchday}` : data.stage ? formatStage(data.stage) : null
-  const grouped = groupByDate(data.matches)
+  const grouped = groupByDate(matches)
 
   return (
     <div className="flex flex-col gap-3">
-      {label && (
-        <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          {label}
-        </p>
-      )}
-      {grouped.map(({ label: dateLabel, matches }) => (
-        <div key={dateLabel}>
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{dateLabel}</p>
+      {grouped.map(({ label, matches: ms }) => (
+        <div key={label}>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{label}</p>
           <div className="flex flex-col divide-y divide-[var(--color-border)]">
-            {matches.map(m => <MatchRow key={m.id} match={m} />)}
+            {ms.map(m => <MatchRow key={m.id} match={m} />)}
           </div>
         </div>
       ))}
-      {data.matches.length === 0 && <p className="text-sm text-[var(--color-muted-foreground)]">No upcoming matches.</p>}
+      {matches.length === 0 && <p className="text-sm text-[var(--color-muted-foreground)]">No upcoming matches.</p>}
     </div>
   )
 }
@@ -189,74 +179,19 @@ function GroupsView({ data, loading }: { data: { groups: Group[] } | null; loadi
   )
 }
 
-function UpcomingView({ matches, loading }: { matches: Match[] | null; loading: boolean }) {
-  if (loading) return <MatchSkeleton />
-  if (!matches) return <p className="text-sm text-red-400">Failed to load.</p>
-
-  const grouped = groupByDate(matches)
-
-  return (
-    <div className="flex flex-col gap-3">
-      {grouped.map(({ label, matches: ms }) => (
-        <div key={label}>
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{label}</p>
-          <div className="flex flex-col divide-y divide-[var(--color-border)]">
-            {ms.map(m => <MatchRow key={m.id} match={m} />)}
-          </div>
-        </div>
-      ))}
-      {matches.length === 0 && <p className="text-sm text-[var(--color-muted-foreground)]">No upcoming matches.</p>}
-    </div>
-  )
-}
-
-function NorwayView({ matches, loading }: { matches: Match[] | null; loading: boolean }) {
-  if (loading) return <MatchSkeleton />
-  if (!matches) return <p className="text-sm text-red-400">Failed to load.</p>
-  if (matches.length === 0) return <p className="text-sm text-[var(--color-muted-foreground)]">No matches found.</p>
-
-  const grouped = groupByDate(matches)
-
-  return (
-    <div className="flex flex-col gap-3">
-      {grouped.map(({ label, matches: ms }) => (
-        <div key={label}>
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--color-muted-foreground)]">{label}</p>
-          <div className="flex flex-col divide-y divide-[var(--color-border)]">
-            {ms.map(m => <MatchRow key={m.id} match={m} />)}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 // ── Main widget ───────────────────────────────────────────────────────────────
 
-const TABS: { key: WCTab; label: string }[] = [
-  { key: 'next',     label: 'Next' },
-  { key: 'groups',   label: 'Groups' },
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'norway',   label: '🇳🇴' },
-]
-
 export function WorldCup() {
-  const [tab, setTab]           = useState<WCTab>('next')
+  const [tab, setTab]               = useState<WCTab>('upcoming')
   const [refreshKey, setRefreshKey] = useState(0)
-  const [blurred, toggleBlur]   = useBlur('homepage:blur-worldcup')
+  const [blurred, toggleBlur]       = useBlur('homepage:blur-worldcup')
   const workMode = useWorkMode()
 
-  const [nextData, setNextData]         = useState<{ matches: Match[]; matchday?: number; stage?: string } | null>(null)
-  const [nextLoading, setNextLoading]   = useState(true)
+  const [upcomingData, setUpcomingData]       = useState<Match[] | null>(null)
+  const [upcomingLoading, setUpcomingLoading] = useState(true)
 
-  const [groupsData, setGroupsData]     = useState<{ groups: Group[] } | null>(null)
-  const [groupsLoading, setGroupsLoading] = useState(false)
-
-  const [upcomingData, setUpcomingData] = useState<Match[] | null>(null)
-  const [upcomingLoading, setUpcomingLoading] = useState(false)
-
-  const [norwayData, setNorwayData]     = useState<Match[] | null>(null)
-  const [norwayLoading, setNorwayLoading] = useState(false)
+  const [groupsData, setGroupsData]         = useState<{ groups: Group[] } | null>(null)
+  const [groupsLoading, setGroupsLoading]   = useState(false)
 
   async function apiFetch<T>(url: string): Promise<T | null> {
     try {
@@ -268,11 +203,11 @@ export function WorldCup() {
   }
 
   useEffect(() => {
-    setNextLoading(true)
-    setNextData(null)
-    apiFetch<{ matches: Match[]; matchday?: number; stage?: string }>('/api/worldcup/next')
-      .then(d => setNextData(d))
-      .finally(() => setNextLoading(false))
+    setUpcomingLoading(true)
+    setUpcomingData(null)
+    apiFetch<{ matches: Match[] }>('/api/worldcup/upcoming')
+      .then(d => setUpcomingData(d?.matches ?? null))
+      .finally(() => setUpcomingLoading(false))
   }, [refreshKey])
 
   useEffect(() => {
@@ -283,24 +218,9 @@ export function WorldCup() {
       .finally(() => setGroupsLoading(false))
   }, [tab])
 
-  useEffect(() => {
-    if (tab !== 'upcoming' || upcomingData) return
-    setUpcomingLoading(true)
-    apiFetch<{ matches: Match[] }>('/api/worldcup/upcoming')
-      .then(d => setUpcomingData(d?.matches ?? null))
-      .finally(() => setUpcomingLoading(false))
-  }, [tab])
-
-  useEffect(() => {
-    if (tab !== 'norway' || norwayData) return
-    setNorwayLoading(true)
-    apiFetch<{ matches: Match[] }>('/api/worldcup/norway')
-      .then(d => setNorwayData(d?.matches ?? null))
-      .finally(() => setNorwayLoading(false))
-  }, [tab])
-
   const handleRefresh = useCallback(() => {
-    setNextData(null); setGroupsData(null); setUpcomingData(null); setNorwayData(null)
+    setUpcomingData(null)
+    setGroupsData(null)
     setRefreshKey(k => k + 1)
   }, [])
 
@@ -311,34 +231,34 @@ export function WorldCup() {
       <div className="relative mb-2 flex shrink-0 items-center justify-center">
         {workMode
           ? <img src={WORK_LOGO} alt="" className="h-6 object-contain" />
-          : <span className="text-lg font-bold tracking-tight text-[var(--color-foreground)]">🏆 WC 2026</span>
+          : <span className="text-2xl leading-none">🌍🏆</span>
         }
         <div className="absolute left-0 flex items-center gap-0.5">
-          <RefreshButton onClick={handleRefresh} loading={nextLoading} />
+          <RefreshButton onClick={handleRefresh} loading={upcomingLoading || groupsLoading} />
           <BlurButton blurred={blurred} onToggle={toggleBlur} />
+        </div>
+        <div className="absolute right-0 flex items-center gap-0.5">
+          <button
+            onClick={() => setTab('upcoming')}
+            className={`rounded p-1 text-base leading-none transition-opacity ${tab === 'upcoming' ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+            title="Upcoming matches"
+          >
+            ⚽
+          </button>
+          <button
+            onClick={() => setTab('groups')}
+            className={`rounded p-1 text-base leading-none transition-opacity ${tab === 'groups' ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+            title="Group standings"
+          >
+            📊
+          </button>
         </div>
       </div>
 
       <div className={`flex flex-1 flex-col overflow-hidden transition-[filter] duration-200${blurred ? ' blur-sm select-none pointer-events-none' : ''}`}>
-        {/* Tabs */}
-        <div className="mb-2 flex shrink-0 gap-1 rounded-lg bg-[var(--color-muted)] p-0.5">
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex-1 rounded-md py-1 text-[11px] font-medium transition-colors ${tab === t.key ? 'bg-[var(--card-bg)] text-[var(--color-foreground)] shadow-sm' : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {tab === 'next'     && <NextView     data={nextData}       loading={nextLoading} />}
-          {tab === 'groups'   && <GroupsView   data={groupsData}     loading={groupsLoading} />}
           {tab === 'upcoming' && <UpcomingView matches={upcomingData} loading={upcomingLoading} />}
-          {tab === 'norway'   && <NorwayView   matches={norwayData}   loading={norwayLoading} />}
+          {tab === 'groups'   && <GroupsView   data={groupsData}     loading={groupsLoading} />}
         </div>
       </div>
     </div>
